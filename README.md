@@ -124,4 +124,4 @@ test/              # Unit and widget tests
 
 ## API and attribution
 
-The application uses TMDB's daily movie trending, movie/TV/multi-search, and movie/TV detail endpoints with English (`en-US`) responses. Anime search uses TMDB's Animation genre classification across movie and TV results. This product uses the TMDB API but is not endorsed or certified by TMDB.
+The application uses TMDB's daily trending and popular movie/TV lists, movie/TV/multi-search, TV discovery, and movie/TV detail endpoints with English (`en-US`) responses. Anime browsing and search use TMDB's Animation genre classification. This product uses the TMDB API but is not endorsed or certified by TMDB.

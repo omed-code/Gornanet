@@ -260,12 +260,36 @@ class SearchNotifier extends Notifier<SearchState> {
   @override
   SearchState build() => const SearchState();
 
+  Future<void> browse() async {
+    final category = state.category;
+    final requestId = ++_requestId;
+    state = SearchState(category: category, results: const AsyncLoading());
+    try {
+      final page = await ref
+          .read(movieRepositoryProvider)
+          .browse(page: 1, category: category);
+      if (requestId == _requestId) {
+        state = SearchState(
+          category: category,
+          results: AsyncData(PagedMovies.fromPage(page)),
+        );
+      }
+    } catch (error, stackTrace) {
+      if (requestId == _requestId) {
+        state = SearchState(
+          category: category,
+          results: AsyncError(error, stackTrace),
+        );
+      }
+    }
+  }
+
   Future<void> search(String rawQuery) async {
     final query = rawQuery.trim();
     final category = state.category;
     final requestId = ++_requestId;
     if (query.isEmpty) {
-      state = SearchState(category: category);
+      await browse();
       return;
     }
 
@@ -300,10 +324,14 @@ class SearchNotifier extends Notifier<SearchState> {
     if (category == state.category) return;
     final query = state.query;
     state = SearchState(query: query, category: category);
-    if (query.isNotEmpty) await search(query);
+    if (query.isNotEmpty) {
+      await search(query);
+    } else {
+      await browse();
+    }
   }
 
-  Future<void> retry() => search(state.query);
+  Future<void> retry() => state.query.isEmpty ? browse() : search(state.query);
 
   Future<void> loadMore() async {
     final query = state.query;
@@ -319,9 +347,14 @@ class SearchNotifier extends Notifier<SearchState> {
       ),
     );
     try {
-      final page = await ref
-          .read(movieRepositoryProvider)
-          .search(query: query, page: current.page + 1, category: category);
+      final repository = ref.read(movieRepositoryProvider);
+      final page = query.isEmpty
+          ? await repository.browse(page: current.page + 1, category: category)
+          : await repository.search(
+              query: query,
+              page: current.page + 1,
+              category: category,
+            );
       if (requestId == _requestId) {
         state = state.copyWith(results: AsyncData(current.append(page)));
       }

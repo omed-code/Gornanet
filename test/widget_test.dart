@@ -31,8 +31,27 @@ class FakeMovieRepository implements MovieRepository {
   final bool failAuthentication;
   final bool paginated;
   final trendingPages = <int>[];
+  final browseCategories = <SearchCategory>[];
   final searchQueries = <String>[];
   final searchCategories = <SearchCategory>[];
+
+  @override
+  Future<MoviePage> browse({
+    required int page,
+    SearchCategory category = SearchCategory.movies,
+  }) async {
+    browseCategories.add(category);
+    final label = switch (category) {
+      SearchCategory.movies => 'Popular movie',
+      SearchCategory.series => 'Popular series',
+      SearchCategory.anime => 'Popular anime',
+    };
+    return MoviePage(
+      movies: <Movie>[movie(20 + category.index, label)],
+      page: 1,
+      totalPages: 1,
+    );
+  }
 
   @override
   Future<MoviePage> trending({required int page}) async {
@@ -267,6 +286,7 @@ void main() {
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('Series'), findsOneWidget);
     expect(find.text('Anime'), findsOneWidget);
+    expect(find.text('Popular movie'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('movie-search-field')), 'One');
     await tester.pump(const Duration(milliseconds: 500));
@@ -281,6 +301,25 @@ void main() {
       SearchCategory.series,
       SearchCategory.anime,
     ]);
+  });
+
+  testWidgets('category tabs browse titles without a search query', (
+    tester,
+  ) async {
+    final repository = FakeMovieRepository();
+    await pumpMovieApp(tester, movies: repository);
+
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Popular movie'), findsOneWidget);
+
+    await tester.tap(find.text('Series'));
+    await tester.pumpAndSettle();
+    expect(find.text('Popular series'), findsOneWidget);
+
+    await tester.tap(find.text('Anime'));
+    await tester.pumpAndSettle();
+    expect(find.text('Popular anime'), findsOneWidget);
   });
 
   testWidgets('adds a movie and renders the persisted watchlist', (

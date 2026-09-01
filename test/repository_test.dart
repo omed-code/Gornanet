@@ -139,6 +139,29 @@ void main() {
     ]);
   });
 
+  test('browse categories use popular and anime discovery endpoints', () async {
+    final requests = <http.Request>[];
+    final client = TmdbClient(
+      accessToken: '0123456789abcdef0123456789abcdef',
+      client: MockClient((request) async {
+        requests.add(request);
+        return http.Response('{"page":1,"total_pages":1,"results":[]}', 200);
+      }),
+    );
+    final repository = TmdbMovieRepository(client);
+
+    await repository.browse(page: 1);
+    await repository.browse(page: 1, category: SearchCategory.series);
+    await repository.browse(page: 1, category: SearchCategory.anime);
+
+    expect(requests.map((request) => request.url.path), <String>[
+      '/3/movie/popular',
+      '/3/tv/popular',
+      '/3/discover/tv',
+    ]);
+    expect(requests.last.url.queryParameters['with_genres'], '16');
+  });
+
   test('TV details use the TV endpoint and retain their media type', () async {
     late String path;
     final client = TmdbClient(

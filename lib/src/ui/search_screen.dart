@@ -25,6 +25,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     super.initState();
     _textController = TextEditingController();
     _scrollController = ScrollController()..addListener(_onScroll);
+    Future<void>.microtask(() => ref.read(searchProvider.notifier).browse());
   }
 
   void _onChanged(String value) {
@@ -159,8 +160,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           return StatePanel(
             icon: Icons.search_off,
             title: 'No matches',
-            message:
-                'No ${_categoryName(search.category, plural: true)} matched “${search.query}”. Try another title.',
+            message: search.query.isEmpty
+                ? 'No ${_categoryName(search.category, plural: true)} are available right now.'
+                : 'No ${_categoryName(search.category, plural: true)} matched “${search.query}”. Try another title.',
           );
         }
         return MovieListView(

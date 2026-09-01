@@ -6,6 +6,10 @@ enum SearchCategory { movies, series, anime }
 
 abstract class MovieRepository {
   Future<MoviePage> trending({required int page});
+  Future<MoviePage> browse({
+    required int page,
+    SearchCategory category = SearchCategory.movies,
+  });
   Future<MoviePage> search({
     required String query,
     required int page,
@@ -26,6 +30,35 @@ class TmdbMovieRepository implements MovieRepository {
       query: <String, String>{'page': '$page'},
     );
     return MoviePage.fromJson(json);
+  }
+
+  @override
+  Future<MoviePage> browse({
+    required int page,
+    SearchCategory category = SearchCategory.movies,
+  }) async {
+    final path = switch (category) {
+      SearchCategory.movies => '/movie/popular',
+      SearchCategory.series => '/tv/popular',
+      SearchCategory.anime => '/discover/tv',
+    };
+    final json = await _client.get(
+      path,
+      query: <String, String>{
+        'page': '$page',
+        'include_adult': 'false',
+        if (category == SearchCategory.anime) ...<String, String>{
+          'with_genres': '16',
+          'sort_by': 'popularity.desc',
+        },
+      },
+    );
+    return MoviePage.fromJson(
+      json,
+      defaultMediaType: category == SearchCategory.movies
+          ? MediaType.movie
+          : MediaType.tv,
+    );
   }
 
   @override
