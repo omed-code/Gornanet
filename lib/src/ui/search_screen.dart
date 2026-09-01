@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/tmdb_client.dart';
 import '../repositories/movie_repository.dart';
 import '../state/app_providers.dart';
+import 'movie_detail_screen.dart';
 import 'widgets/credential_dialog.dart';
 import 'widgets/movie_list_view.dart';
 import 'widgets/state_panel.dart';
@@ -41,6 +42,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   int _hintCharacterCount = 0;
   int _hintPauseTicks = 0;
   bool _deletingHint = false;
+  bool _loadingRandomSuggestion = false;
 
   @override
   void initState() {
@@ -147,6 +149,29 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
+  Future<void> _showRandomSuggestion() async {
+    if (_loadingRandomSuggestion) return;
+    setState(() => _loadingRandomSuggestion = true);
+    try {
+      final movie = await ref.read(searchProvider.notifier).randomSuggestion();
+      if (mounted) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => MovieDetailScreen(movie: movie),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(readableError(error))));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingRandomSuggestion = false);
+    }
+  }
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -243,6 +268,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     .read(searchProvider.notifier)
                     .selectCategory(selection.first);
               },
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              key: const Key('random-suggestion-button'),
+              onPressed: _loadingRandomSuggestion
+                  ? null
+                  : _showRandomSuggestion,
+              icon: _loadingRandomSuggestion
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: Image.asset(
+                        'assets/branding/spider_movie_icon.png',
+                        key: const Key('random-suggestion-logo'),
+                        width: 22,
+                        height: 22,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+              label: Text(
+                _loadingRandomSuggestion ? 'Finding a title…' : 'Surprise me',
+              ),
             ),
           ),
         ),

@@ -107,6 +107,9 @@ class FakeMovieRepository implements MovieRepository {
   }
 
   @override
+  Future<Movie> randomSuggestion() async => movie(88, 'Random surprise');
+
+  @override
   Future<Movie> details(
     int movieId, {
     MediaType mediaType = MediaType.movie,
@@ -221,6 +224,7 @@ void main() {
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
     expect(find.byKey(const Key('movie-list')), findsOneWidget);
+    expect(find.byKey(const Key('modern-bottom-navigation')), findsOneWidget);
   });
 
   testWidgets('app bar search button opens the search tab', (tester) async {
@@ -400,6 +404,19 @@ void main() {
     await tester.tap(find.text('Anime'));
     await tester.pumpAndSettle();
     expect(find.text('Popular anime'), findsOneWidget);
+  });
+
+  testWidgets('random suggestion opens a title detail screen', (tester) async {
+    await pumpMovieApp(tester);
+
+    await tester.tap(find.byKey(const Key('app-bar-search')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('random-suggestion-logo')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('random-suggestion-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 88'), findsWidgets);
+    expect(find.byKey(const Key('movie-detail-scroll')), findsOneWidget);
   });
 
   testWidgets('adds a movie and renders the persisted watchlist', (

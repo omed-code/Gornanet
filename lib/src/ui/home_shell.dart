@@ -95,34 +95,46 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: Theme.of(context).colorScheme.outlineVariant,
+        minimum: const EdgeInsets.only(bottom: 8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Material(
+            key: const Key('modern-bottom-navigation'),
+            elevation: 10,
+            shadowColor: Theme.of(
+              context,
+            ).colorScheme.shadow.withValues(alpha: .18),
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+              side: BorderSide(
+                color: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant.withValues(alpha: .75),
               ),
             ),
-          ),
-          child: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: (index) => setState(() => _index = index),
-            destinations: const <NavigationDestination>[
-              NavigationDestination(
-                icon: Icon(Icons.local_fire_department_outlined),
-                selectedIcon: Icon(Icons.local_fire_department_rounded),
-                label: 'Trending',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.search_rounded),
-                selectedIcon: Icon(Icons.manage_search_rounded),
-                label: 'Search',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.bookmark_border_rounded),
-                selectedIcon: Icon(Icons.bookmark_rounded),
-                label: 'Watchlist',
-              ),
-            ],
+            child: NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: (index) => setState(() => _index = index),
+              destinations: const <NavigationDestination>[
+                NavigationDestination(
+                  icon: Icon(Icons.local_fire_department_outlined),
+                  selectedIcon: Icon(Icons.local_fire_department_rounded),
+                  label: 'Trending',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.search_rounded),
+                  selectedIcon: Icon(Icons.manage_search_rounded),
+                  label: 'Search',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bookmark_border_rounded),
+                  selectedIcon: Icon(Icons.bookmark_rounded),
+                  label: 'Watchlist',
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import '../core/tmdb_client.dart';
 import '../models/movie.dart';
 import '../models/movie_page.dart';
@@ -15,13 +17,16 @@ abstract class MovieRepository {
     required int page,
     SearchCategory category = SearchCategory.movies,
   });
+  Future<Movie> randomSuggestion();
   Future<Movie> details(int movieId, {MediaType mediaType = MediaType.movie});
 }
 
 class TmdbMovieRepository implements MovieRepository {
-  const TmdbMovieRepository(this._client);
+  TmdbMovieRepository(this._client, {Random? random})
+    : _random = random ?? Random();
 
   final TmdbClient _client;
+  final Random _random;
 
   @override
   Future<MoviePage> trending({required int page}) async {
@@ -87,6 +92,23 @@ class TmdbMovieRepository implements MovieRepository {
           : MediaType.movie,
       animeOnly: category == SearchCategory.anime,
     );
+  }
+
+  @override
+  Future<Movie> randomSuggestion() async {
+    final categories = SearchCategory.values;
+    final category = categories[_random.nextInt(categories.length)];
+    final page = await browse(
+      page: _random.nextInt(10) + 1,
+      category: category,
+    );
+    if (page.movies.isEmpty) {
+      throw const AppException(
+        AppErrorType.server,
+        'Could not find a random title. Please try again.',
+      );
+    }
+    return page.movies[_random.nextInt(page.movies.length)];
   }
 
   @override

@@ -239,6 +239,11 @@ class SearchNotifier extends Notifier<SearchState> {
   @override
   SearchState build() => const SearchState();
 
+  Future<Movie> randomSuggestion() async {
+    await ref.read(tmdbCredentialProvider.notifier).ready;
+    return ref.read(movieRepositoryProvider).randomSuggestion();
+  }
+
   Future<void> browse() async {
     final category = state.category;
     final requestId = ++_requestId;
