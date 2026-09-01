@@ -228,6 +228,10 @@ void main() {
 
     expect(find.text('Find a title'), findsOneWidget);
     expect(find.byKey(const Key('search-category-selector')), findsOneWidget);
+    expect(
+      find.text('Spider Movie · Movies, series, and anime in one place'),
+      findsOneWidget,
+    );
     final field = tester.widget<TextField>(
       find.byKey(const Key('movie-search-field')),
     );
