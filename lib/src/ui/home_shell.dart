@@ -26,24 +26,50 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              'SPIDER MOVIE',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2.2,
+        centerTitle: false,
+        flexibleSpace: SafeArea(
+          child: IgnorePointer(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(5),
+                      child: Image.asset(
+                        'assets/branding/spider_movie_icon.png',
+                        key: const Key('app-bar-logo'),
+                        width: 20,
+                        height: 20,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'SPIDER MOVIE',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2.2,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
+          ),
+        ),
+        title: Padding(
+          padding: const EdgeInsets.only(top: 15),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
               _titles[_index],
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-          ],
+          ),
         ),
         actions: <Widget>[
           IconButton(

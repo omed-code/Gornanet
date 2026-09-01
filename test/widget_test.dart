@@ -215,6 +215,9 @@ void main() {
     await pumpMovieApp(tester);
 
     expect(find.text('SPIDER MOVIE'), findsOneWidget);
+    expect(find.byKey(const Key('app-bar-logo')), findsOneWidget);
+    final appBar = tester.widget<AppBar>(find.byType(AppBar));
+    expect(appBar.centerTitle, isFalse);
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
     expect(find.byKey(const Key('movie-list')), findsOneWidget);
