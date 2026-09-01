@@ -8,9 +8,10 @@ import '../repositories/movie_repository.dart';
 import '../repositories/preferences_repositories.dart';
 
 const tmdbAccessToken = String.fromEnvironment('TMDB_ACCESS_TOKEN');
+const tmdbApiKey = String.fromEnvironment('TMDB_API_KEY');
 
 final tmdbClientProvider = Provider<TmdbClient>((ref) {
-  final client = TmdbClient(accessToken: tmdbAccessToken);
+  final client = TmdbClient(accessToken: tmdbAccessToken, apiKey: tmdbApiKey);
   ref.onDispose(client.close);
   return client;
 });

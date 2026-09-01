@@ -17,27 +17,35 @@ class AppException implements Exception {
 }
 
 class TmdbClient {
-  TmdbClient({required String accessToken, http.Client? client})
-    : _accessToken = accessToken,
-      _client = client ?? http.Client();
+  TmdbClient({
+    required String accessToken,
+    String apiKey = '',
+    http.Client? client,
+  }) : _accessToken = apiKey.trim().isEmpty
+           ? _normalizeBearerToken(accessToken)
+           : '',
+       _apiKey = _resolveApiKey(accessToken: accessToken, apiKey: apiKey),
+       _client = client ?? http.Client();
 
   static const _baseUrl = 'api.themoviedb.org';
   final String _accessToken;
+  final String _apiKey;
   final http.Client _client;
 
   Future<Map<String, dynamic>> get(
     String path, {
     Map<String, String> query = const <String, String>{},
   }) async {
-    if (_accessToken.trim().isEmpty) {
+    if (_accessToken.isEmpty && _apiKey.isEmpty) {
       throw const AppException(
         AppErrorType.configuration,
-        'TMDB access token is missing. Start the app with --dart-define=TMDB_ACCESS_TOKEN=your_token.',
+        'TMDB credentials are missing. Restart with TMDB_ACCESS_TOKEN (the long API Read Access Token) or TMDB_API_KEY.',
       );
     }
 
     final uri = Uri.https(_baseUrl, '/3$path', <String, String>{
       'language': 'en-US',
+      if (_apiKey.isNotEmpty) 'api_key': _apiKey,
       ...query,
     });
 
@@ -46,7 +54,8 @@ class TmdbClient {
           .get(
             uri,
             headers: <String, String>{
-              'Authorization': 'Bearer $_accessToken',
+              if (_accessToken.isNotEmpty)
+                'Authorization': 'Bearer $_accessToken',
               'Accept': 'application/json',
             },
           )
@@ -55,7 +64,7 @@ class TmdbClient {
       if (response.statusCode == 401 || response.statusCode == 403) {
         throw const AppException(
           AppErrorType.unauthorized,
-          'TMDB rejected the access token. Check your API Read Access Token.',
+          'TMDB rejected the credential. Use the long API Read Access Token—not the token name or placeholder—or provide your API Key with TMDB_API_KEY, then fully restart the app.',
         );
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -97,6 +106,31 @@ class TmdbClient {
       );
     }
   }
+
+  static String _normalizeBearerToken(String value) {
+    final trimmed = value.trim();
+    final withoutPrefix = trimmed.replaceFirst(
+      RegExp(r'^Bearer\s+', caseSensitive: false),
+      '',
+    );
+    return _looksLikeV3ApiKey(withoutPrefix) ? '' : withoutPrefix;
+  }
+
+  static String _resolveApiKey({
+    required String accessToken,
+    required String apiKey,
+  }) {
+    final explicitApiKey = apiKey.trim();
+    if (explicitApiKey.isNotEmpty) return explicitApiKey;
+    final tokenValue = accessToken.trim().replaceFirst(
+      RegExp(r'^Bearer\s+', caseSensitive: false),
+      '',
+    );
+    return _looksLikeV3ApiKey(tokenValue) ? tokenValue : '';
+  }
+
+  static bool _looksLikeV3ApiKey(String value) =>
+      RegExp(r'^[a-fA-F0-9]{32}$').hasMatch(value);
 
   void close() => _client.close();
 }

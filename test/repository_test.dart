@@ -54,6 +54,60 @@ void main() {
     );
   });
 
+  test('bearer prefix is normalized instead of being sent twice', () async {
+    late http.Request captured;
+    final client = TmdbClient(
+      accessToken: '  Bearer eyJvalid.token.value  ',
+      client: MockClient((request) async {
+        captured = request;
+        return http.Response('{"ok":true}', 200);
+      }),
+    );
+
+    await client.get('/movie/1');
+
+    expect(captured.headers['Authorization'], 'Bearer eyJvalid.token.value');
+    expect(captured.url.queryParameters, isNot(contains('api_key')));
+  });
+
+  test(
+    'a v3 API key passed as access token is detected automatically',
+    () async {
+      const apiKey = '0123456789abcdef0123456789abcdef';
+      late http.Request captured;
+      final client = TmdbClient(
+        accessToken: apiKey,
+        client: MockClient((request) async {
+          captured = request;
+          return http.Response('{"ok":true}', 200);
+        }),
+      );
+
+      await client.get('/movie/1');
+
+      expect(captured.url.queryParameters['api_key'], apiKey);
+      expect(captured.headers, isNot(contains('Authorization')));
+    },
+  );
+
+  test('an explicit v3 API key uses the api_key query parameter', () async {
+    const apiKey = 'fedcba9876543210fedcba9876543210';
+    late http.Request captured;
+    final client = TmdbClient(
+      accessToken: 'an-old-token-is-ignored',
+      apiKey: apiKey,
+      client: MockClient((request) async {
+        captured = request;
+        return http.Response('{"ok":true}', 200);
+      }),
+    );
+
+    await client.get('/movie/1');
+
+    expect(captured.url.queryParameters['api_key'], apiKey);
+    expect(captured.headers, isNot(contains('Authorization')));
+  });
+
   test('watchlist round-trips complete local movie summaries', () async {
     final store = MemoryStore();
     final repository = LocalWatchlistRepository(store);

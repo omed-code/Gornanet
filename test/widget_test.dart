@@ -20,9 +20,14 @@ Movie movie(int id, [String? title]) => Movie(
 );
 
 class FakeMovieRepository implements MovieRepository {
-  FakeMovieRepository({this.failTrending = false, this.paginated = false});
+  FakeMovieRepository({
+    this.failTrending = false,
+    this.failAuthentication = false,
+    this.paginated = false,
+  });
 
   final bool failTrending;
+  final bool failAuthentication;
   final bool paginated;
   final trendingPages = <int>[];
   final searchQueries = <String>[];
@@ -30,6 +35,12 @@ class FakeMovieRepository implements MovieRepository {
   @override
   Future<MoviePage> trending({required int page}) async {
     trendingPages.add(page);
+    if (failAuthentication) {
+      throw const AppException(
+        AppErrorType.unauthorized,
+        'TMDB rejected the credential.',
+      );
+    }
     if (failTrending) {
       throw const AppException(
         AppErrorType.network,
@@ -148,6 +159,19 @@ void main() {
     expect(find.text('Could not load trending movies'), findsOneWidget);
     expect(find.text('You appear to be offline.'), findsOneWidget);
     expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('shows setup guidance without a useless auth retry', (
+    tester,
+  ) async {
+    await pumpMovieApp(
+      tester,
+      movies: FakeMovieRepository(failAuthentication: true),
+    );
+
+    expect(find.text('TMDB setup required'), findsOneWidget);
+    expect(find.text('TMDB rejected the credential.'), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
   });
 
   testWidgets('debounces search and renders its result', (tester) async {
