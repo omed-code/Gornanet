@@ -5,7 +5,6 @@ import '../state/app_providers.dart';
 import 'search_screen.dart';
 import 'trending_screen.dart';
 import 'watchlist_screen.dart';
-import 'widgets/credential_dialog.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -28,11 +27,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_index]),
-        actions: const <Widget>[
-          _CredentialButton(),
-          _ThemeModeMenu(),
-          SizedBox(width: 6),
-        ],
+        actions: const <Widget>[_ThemeModeMenu(), SizedBox(width: 6)],
       ),
       body: SafeArea(
         top: false,
@@ -69,19 +64,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CredentialButton extends ConsumerWidget {
-  const _CredentialButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return IconButton(
-      tooltip: 'Configure TMDB credential',
-      onPressed: () => showTmdbCredentialDialog(context, ref),
-      icon: const Icon(Icons.key_outlined),
     );
   }
 }
