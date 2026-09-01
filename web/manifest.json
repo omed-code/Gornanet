@@ -1,6 +1,6 @@
 {
-    "name": "goran_net",
-    "short_name": "goran_net",
+    "name": "Spider Movie",
+    "short_name": "Spider Movie",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

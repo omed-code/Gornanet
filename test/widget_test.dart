@@ -214,6 +214,7 @@ void main() {
   testWidgets('renders trending content inside safe areas', (tester) async {
     await pumpMovieApp(tester);
 
+    expect(find.text('SPIDER MOVIE'), findsOneWidget);
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
     expect(find.byKey(const Key('movie-list')), findsOneWidget);
@@ -227,6 +228,22 @@ void main() {
 
     expect(find.text('Find a title'), findsOneWidget);
     expect(find.byKey(const Key('search-category-selector')), findsOneWidget);
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('movie-search-field')),
+    );
+    expect(field.focusNode?.hasFocus, isTrue);
+  });
+
+  testWidgets('search hint types a movie title when the tab opens', (
+    tester,
+  ) async {
+    await pumpMovieApp(tester);
+
+    await tester.tap(find.byKey(const Key('app-bar-search')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.textContaining('Try “D'), findsOneWidget);
   });
 
   testWidgets('search waits for the saved credential during startup', (

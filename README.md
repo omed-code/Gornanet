@@ -1,4 +1,4 @@
-# Gorana Movies
+# Spider Movie
 
 A polished Flutter application for browsing daily trending movies, searching TMDB, and keeping an offline watchlist. The app targets Flutter 3.32+ and Dart 3.8+ with sound null safety.
 

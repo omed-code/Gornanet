@@ -31,7 +31,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Text(
-              'GORANA',
+              'SPIDER MOVIE',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w900,
@@ -60,10 +60,10 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         top: false,
         child: IndexedStack(
           index: _index,
-          children: const <Widget>[
-            TrendingScreen(),
-            SearchScreen(),
-            WatchlistScreen(),
+          children: <Widget>[
+            const TrendingScreen(),
+            SearchScreen(isActive: _index == 1),
+            const WatchlistScreen(),
           ],
         ),
       ),

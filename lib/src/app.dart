@@ -12,7 +12,7 @@ class MovieApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider).value ?? ThemeMode.system;
     return MaterialApp(
-      title: 'Gorana Movies',
+      title: 'Spider Movie',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

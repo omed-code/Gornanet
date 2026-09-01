@@ -11,32 +11,134 @@ import 'widgets/movie_list_view.dart';
 import 'widgets/state_panel.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({this.isActive = true, super.key});
+
+  final bool isActive;
 
   @override
   ConsumerState<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends ConsumerState<SearchScreen> {
+  static const _hintTitles = <SearchCategory, List<String>>{
+    SearchCategory.movies: <String>['Dune', 'Inception', 'Interstellar'],
+    SearchCategory.series: <String>['Breaking Bad', 'Dark', 'The Last of Us'],
+    SearchCategory.anime: <String>[
+      'Attack on Titan',
+      'Death Note',
+      'Demon Slayer',
+    ],
+  };
+
   late final TextEditingController _textController;
   late final ScrollController _scrollController;
+  late final FocusNode _searchFocusNode;
   Timer? _debounce;
+  Timer? _hintTimer;
+  SearchCategory _hintCategory = SearchCategory.movies;
+  String _animatedHint = '';
+  int _hintTitleIndex = 0;
+  int _hintCharacterCount = 0;
+  int _hintPauseTicks = 0;
+  bool _deletingHint = false;
 
   @override
   void initState() {
     super.initState();
     _textController = TextEditingController();
     _scrollController = ScrollController()..addListener(_onScroll);
+    _searchFocusNode = FocusNode();
     Future<void>.microtask(() => ref.read(searchProvider.notifier).browse());
+    if (widget.isActive) {
+      _startHintAnimation(_hintCategory);
+      _focusSearchField();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive && widget.isActive) {
+      _startHintAnimation(_hintCategory);
+      _focusSearchField();
+    } else if (oldWidget.isActive && !widget.isActive) {
+      _hintTimer?.cancel();
+      _hintTimer = null;
+    }
+  }
+
+  void _focusSearchField() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.isActive) _searchFocusNode.requestFocus();
+    });
   }
 
   void _onChanged(String value) {
     _debounce?.cancel();
+    if (value.isEmpty) {
+      if (widget.isActive && _hintTimer == null) {
+        _startHintAnimation(_hintCategory);
+      }
+    } else {
+      _hintTimer?.cancel();
+      _hintTimer = null;
+    }
     _debounce = Timer(
       const Duration(milliseconds: 450),
       () => ref.read(searchProvider.notifier).search(value),
     );
     setState(() {});
+  }
+
+  void _startHintAnimation(SearchCategory category) {
+    _hintTimer?.cancel();
+    _hintCategory = category;
+    _hintTitleIndex = 0;
+    _hintCharacterCount = 0;
+    _hintPauseTicks = 2;
+    _deletingHint = false;
+    _animatedHint = '';
+    if (!widget.isActive || _textController.text.isNotEmpty) {
+      _hintTimer = null;
+      return;
+    }
+
+    _hintTimer = Timer.periodic(const Duration(milliseconds: 85), (timer) {
+      if (!mounted || !widget.isActive || _textController.text.isNotEmpty) {
+        timer.cancel();
+        _hintTimer = null;
+        return;
+      }
+      if (_hintPauseTicks > 0) {
+        _hintPauseTicks--;
+        return;
+      }
+
+      final titles = _hintTitles[category]!;
+      final title = titles[_hintTitleIndex];
+      if (!_deletingHint) {
+        _hintCharacterCount++;
+        if (_hintCharacterCount == title.length) {
+          if (_hintTitleIndex == titles.length - 1) {
+            timer.cancel();
+            _hintTimer = null;
+          } else {
+            _hintPauseTicks = 12;
+            _deletingHint = true;
+          }
+        }
+      } else {
+        _hintCharacterCount--;
+        if (_hintCharacterCount == 0) {
+          _hintTitleIndex++;
+          _deletingHint = false;
+          _hintPauseTicks = 3;
+        }
+      }
+      setState(() {
+        _animatedHint = title.substring(0, _hintCharacterCount);
+      });
+    });
   }
 
   void _onScroll() {
@@ -48,8 +150,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _hintTimer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _searchFocusNode.dispose();
     _textController.dispose();
     super.dispose();
   }
@@ -67,6 +171,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               TextField(
                 key: const Key('movie-search-field'),
                 controller: _textController,
+                focusNode: _searchFocusNode,
                 onChanged: _onChanged,
                 textInputAction: TextInputAction.search,
                 onSubmitted: (value) {
@@ -74,7 +179,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ref.read(searchProvider.notifier).search(value);
                 },
                 decoration: InputDecoration(
-                  hintText: 'Search movies, titles, and stories',
+                  hintText: _animatedHint.isEmpty
+                      ? _defaultHint(search.category)
+                      : 'Try “$_animatedHint”',
                   prefixIcon: const Icon(Icons.search_rounded),
                   suffixIcon: _textController.text.isEmpty
                       ? null
@@ -83,6 +190,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           onPressed: () {
                             _debounce?.cancel();
                             _textController.clear();
+                            _startHintAnimation(search.category);
                             ref.read(searchProvider.notifier).search('');
                             setState(() {});
                           },
@@ -127,6 +235,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               showSelectedIcon: false,
               onSelectionChanged: (selection) {
                 _debounce?.cancel();
+                _startHintAnimation(selection.first);
                 ref
                     .read(searchProvider.notifier)
                     .selectCategory(selection.first);
@@ -193,4 +302,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         SearchCategory.series => 'series',
         SearchCategory.anime => 'anime',
       };
+
+  String _defaultHint(SearchCategory category) => switch (category) {
+    SearchCategory.movies => 'Search movies and stories',
+    SearchCategory.series => 'Search series and shows',
+    SearchCategory.anime => 'Search anime titles',
+  };
 }
