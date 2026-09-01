@@ -26,8 +26,26 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_index]),
-        actions: const <Widget>[_ThemeModeMenu(), SizedBox(width: 6)],
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'GORANA',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 2.2,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _titles[_index],
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ],
+        ),
+        actions: const <Widget>[_ThemeModeMenu(), SizedBox(width: 12)],
       ),
       body: SafeArea(
         top: false,
@@ -42,26 +60,35 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        child: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: (index) => setState(() => _index = index),
-          destinations: const <NavigationDestination>[
-            NavigationDestination(
-              icon: Icon(Icons.local_fire_department_outlined),
-              selectedIcon: Icon(Icons.local_fire_department),
-              label: 'Trending',
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
-            NavigationDestination(
-              icon: Icon(Icons.search),
-              selectedIcon: Icon(Icons.manage_search),
-              label: 'Search',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.bookmark_border),
-              selectedIcon: Icon(Icons.bookmark),
-              label: 'Watchlist',
-            ),
-          ],
+          ),
+          child: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (index) => setState(() => _index = index),
+            destinations: const <NavigationDestination>[
+              NavigationDestination(
+                icon: Icon(Icons.local_fire_department_outlined),
+                selectedIcon: Icon(Icons.local_fire_department_rounded),
+                label: 'Trending',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.search_rounded),
+                selectedIcon: Icon(Icons.manage_search_rounded),
+                label: 'Search',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.bookmark_border_rounded),
+                selectedIcon: Icon(Icons.bookmark_rounded),
+                label: 'Watchlist',
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -76,7 +103,7 @@ class _ThemeModeMenu extends ConsumerWidget {
     final selected = ref.watch(themeModeProvider).value ?? ThemeMode.system;
     return PopupMenuButton<ThemeMode>(
       tooltip: 'Choose theme',
-      icon: const Icon(Icons.brightness_6_outlined),
+      icon: const Icon(Icons.contrast_rounded),
       initialValue: selected,
       onSelected: (mode) async {
         try {

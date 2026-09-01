@@ -56,32 +56,44 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: TextField(
-            key: const Key('movie-search-field'),
-            controller: _textController,
-            onChanged: _onChanged,
-            textInputAction: TextInputAction.search,
-            onSubmitted: (value) {
-              _debounce?.cancel();
-              ref.read(searchProvider.notifier).search(value);
-            },
-            decoration: InputDecoration(
-              hintText: 'Search titles',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _textController.text.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Clear search',
-                      onPressed: () {
-                        _debounce?.cancel();
-                        _textController.clear();
-                        ref.read(searchProvider.notifier).search('');
-                        setState(() {});
-                      },
-                      icon: const Icon(Icons.close),
-                    ),
-            ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              TextField(
+                key: const Key('movie-search-field'),
+                controller: _textController,
+                onChanged: _onChanged,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (value) {
+                  _debounce?.cancel();
+                  ref.read(searchProvider.notifier).search(value);
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search movies, titles, and stories',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _textController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Clear search',
+                          onPressed: () {
+                            _debounce?.cancel();
+                            _textController.clear();
+                            ref.read(searchProvider.notifier).search('');
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Powered by TMDB · Results update as you type',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(child: _buildResults(search)),

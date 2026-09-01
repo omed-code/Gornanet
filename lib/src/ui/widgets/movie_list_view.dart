@@ -26,12 +26,12 @@ class MovieListView extends StatelessWidget {
         key: const Key('movie-list'),
         controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         itemCount: data.movies.length + (hasFooter ? 1 : 0),
         itemBuilder: (context, index) {
           if (index < data.movies.length) {
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: 16),
               child: MovieCard(movie: data.movies[index]),
             );
           }

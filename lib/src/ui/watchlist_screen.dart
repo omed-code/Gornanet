@@ -31,14 +31,79 @@ class WatchlistScreen extends ConsumerWidget {
         }
         return ListView.builder(
           key: const Key('watchlist-list'),
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
-          itemCount: movies.length,
-          itemBuilder: (context, index) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: MovieCard(movie: movies[index]),
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          itemCount: movies.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 18),
+                child: _WatchlistSummary(count: movies.length),
+              );
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: MovieCard(movie: movies[index - 1]),
+            );
+          },
         );
       },
+    );
+  }
+}
+
+class _WatchlistSummary extends StatelessWidget {
+  const _WatchlistSummary({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: <Color>[
+            Theme.of(context).colorScheme.primaryContainer,
+            Theme.of(context).colorScheme.surfaceContainer,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.offline_pin_rounded,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  '$count ${count == 1 ? 'movie' : 'movies'} saved',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Available even when you are offline',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
