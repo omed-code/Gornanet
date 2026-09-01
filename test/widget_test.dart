@@ -1,0 +1,249 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:goran_net/src/app.dart';
+import 'package:goran_net/src/core/tmdb_client.dart';
+import 'package:goran_net/src/models/movie.dart';
+import 'package:goran_net/src/models/movie_page.dart';
+import 'package:goran_net/src/repositories/movie_repository.dart';
+import 'package:goran_net/src/repositories/preferences_repositories.dart';
+import 'package:goran_net/src/state/app_providers.dart';
+
+Movie movie(int id, [String? title]) => Movie(
+  id: id,
+  title: title ?? 'Movie $id',
+  overview: 'A useful overview for movie $id.',
+  posterPath: null,
+  backdropPath: null,
+  releaseDate: '2025-06-01',
+  voteAverage: 7.4,
+);
+
+class FakeMovieRepository implements MovieRepository {
+  FakeMovieRepository({this.failTrending = false, this.paginated = false});
+
+  final bool failTrending;
+  final bool paginated;
+  final trendingPages = <int>[];
+  final searchQueries = <String>[];
+
+  @override
+  Future<MoviePage> trending({required int page}) async {
+    trendingPages.add(page);
+    if (failTrending) {
+      throw const AppException(
+        AppErrorType.network,
+        'You appear to be offline.',
+      );
+    }
+    if (paginated && page == 1) {
+      return MoviePage(
+        movies: List<Movie>.generate(12, (index) => movie(index + 1)),
+        page: 1,
+        totalPages: 2,
+      );
+    }
+    if (paginated && page == 2) {
+      return MoviePage(
+        movies: <Movie>[movie(99, 'Page two movie')],
+        page: 2,
+        totalPages: 2,
+      );
+    }
+    return MoviePage(
+      movies: <Movie>[movie(1, 'Arrival')],
+      page: 1,
+      totalPages: 1,
+    );
+  }
+
+  @override
+  Future<MoviePage> search({required String query, required int page}) async {
+    searchQueries.add(query);
+    return MoviePage(
+      movies: <Movie>[movie(7, 'Result for $query')],
+      page: 1,
+      totalPages: 1,
+    );
+  }
+
+  @override
+  Future<Movie> details(int movieId) async => Movie(
+    id: movieId,
+    title: movieId == 1 ? 'Arrival' : 'Movie $movieId',
+    overview: 'Detailed overview',
+    posterPath: null,
+    backdropPath: null,
+    releaseDate: '2025-06-01',
+    voteAverage: 8,
+    runtime: 118,
+    genres: const <String>['Drama'],
+  );
+}
+
+class FakeWatchlistRepository implements WatchlistRepository {
+  FakeWatchlistRepository([List<Movie> initial = const <Movie>[]])
+    : movies = List<Movie>.of(initial);
+
+  List<Movie> movies;
+
+  @override
+  Future<List<Movie>> load() async => List<Movie>.of(movies);
+
+  @override
+  Future<void> save(List<Movie> movies) async {
+    this.movies = List<Movie>.of(movies);
+  }
+}
+
+class FakeThemeRepository implements ThemeRepository {
+  ThemeMode mode = ThemeMode.system;
+
+  @override
+  Future<ThemeMode> load() async => mode;
+
+  @override
+  Future<void> save(ThemeMode mode) async {
+    this.mode = mode;
+  }
+}
+
+Future<void> pumpMovieApp(
+  WidgetTester tester, {
+  MovieRepository? movies,
+  FakeWatchlistRepository? watchlist,
+  FakeThemeRepository? theme,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(
+          movies ?? FakeMovieRepository(),
+        ),
+        watchlistRepositoryProvider.overrideWithValue(
+          watchlist ?? FakeWatchlistRepository(),
+        ),
+        themeRepositoryProvider.overrideWithValue(
+          theme ?? FakeThemeRepository(),
+        ),
+      ],
+      child: const MovieApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  testWidgets('renders trending content inside safe areas', (tester) async {
+    await pumpMovieApp(tester);
+
+    expect(find.text('Arrival'), findsOneWidget);
+    expect(find.byType(SafeArea), findsWidgets);
+    expect(find.byKey(const Key('movie-list')), findsOneWidget);
+  });
+
+  testWidgets('shows a retryable network error state', (tester) async {
+    await pumpMovieApp(tester, movies: FakeMovieRepository(failTrending: true));
+
+    expect(find.text('Could not load trending movies'), findsOneWidget);
+    expect(find.text('You appear to be offline.'), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('debounces search and renders its result', (tester) async {
+    final repository = FakeMovieRepository();
+    await pumpMovieApp(tester, movies: repository);
+
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('movie-search-field')), 'Dune');
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repository.searchQueries, isEmpty);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+
+    expect(repository.searchQueries, <String>['Dune']);
+    expect(find.text('Result for Dune'), findsOneWidget);
+  });
+
+  testWidgets('adds a movie and renders the persisted watchlist', (
+    tester,
+  ) async {
+    final watchlist = FakeWatchlistRepository();
+    await pumpMovieApp(tester, watchlist: watchlist);
+
+    await tester.tap(find.byTooltip('Add to watchlist').first);
+    await tester.pumpAndSettle();
+    expect(watchlist.movies.single.title, 'Arrival');
+
+    await tester.tap(find.text('Watchlist'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('watchlist-list')), findsOneWidget);
+    expect(find.text('Arrival'), findsOneWidget);
+  });
+
+  testWidgets('saved titles render when the network is unavailable', (
+    tester,
+  ) async {
+    final watchlist = FakeWatchlistRepository(<Movie>[
+      movie(3, 'Saved offline'),
+    ]);
+    await pumpMovieApp(
+      tester,
+      movies: FakeMovieRepository(failTrending: true),
+      watchlist: watchlist,
+    );
+
+    await tester.tap(find.text('Watchlist'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saved offline'), findsOneWidget);
+  });
+
+  testWidgets('switches and persists the dark theme', (tester) async {
+    final theme = FakeThemeRepository();
+    await pumpMovieApp(tester, theme: theme);
+
+    await tester.tap(find.byTooltip('Choose theme'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark theme'));
+    await tester.pumpAndSettle();
+
+    expect(theme.mode, ThemeMode.dark);
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.themeMode, ThemeMode.dark);
+  });
+
+  testWidgets('detail route initializes, scrolls, and disposes cleanly', (
+    tester,
+  ) async {
+    await pumpMovieApp(tester);
+
+    await tester.tap(find.text('Arrival'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('movie-detail-scroll')), findsOneWidget);
+    expect(find.text('118 min'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('movie-detail-scroll')),
+      const Offset(0, -300),
+    );
+    await tester.pump();
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('loads a second trending page near the list end', (tester) async {
+    final repository = FakeMovieRepository(paginated: true);
+    await pumpMovieApp(tester, movies: repository);
+
+    await tester.fling(
+      find.byKey(const Key('movie-list')),
+      const Offset(0, -2200),
+      3000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.trendingPages, contains(2));
+    expect(find.text('Page two movie'), findsOneWidget);
+  });
+}
