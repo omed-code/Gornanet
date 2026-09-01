@@ -37,7 +37,15 @@ cd Gornanet
 flutter pub get
 ```
 
-Pass the long TMDB **API Read Access Token** at build time. Copy the token value itself; a pasted `Bearer ` prefix is accepted but is not required. Do not add credentials to source files:
+Start normally, then select **Add credential** on the setup screen (or the key icon in the app bar) and paste your TMDB API Key or API Read Access Token:
+
+```sh
+flutter run
+```
+
+The credential is encrypted by the platform secure-storage service (iOS Keychain or Android Keystore-backed storage) and reused on future launches.
+
+For CI or command-line configuration, pass the long TMDB **API Read Access Token** at build time. Copy the token value itself; a pasted `Bearer ` prefix is accepted but is not required. Do not add credentials to source files:
 
 ```sh
 flutter run --dart-define=TMDB_ACCESS_TOKEN=YOUR_TMDB_API_READ_ACCESS_TOKEN
@@ -56,7 +64,7 @@ flutter devices
 flutter run -d DEVICE_ID --dart-define=TMDB_ACCESS_TOKEN=YOUR_TOKEN
 ```
 
-If the credential is missing or rejected, the app displays setup guidance instead of repeatedly retrying a request that cannot succeed. A full restart is required after changing `--dart-define`; hot reload does not replace compile-time values. `--dart-define` keeps the credential out of Git; as with any client application, values compiled into a distributed binary should not be treated as a server-side secret.
+If the credential is missing or rejected, the app opens an in-app correction path instead of repeatedly retrying a request that cannot succeed. A full restart is required only after changing `--dart-define`; credentials entered inside the app take effect immediately. `--dart-define` keeps the credential out of Git; as with any client application, values compiled into a distributed binary should not be treated as a server-side secret.
 
 ## Architecture and state management
 

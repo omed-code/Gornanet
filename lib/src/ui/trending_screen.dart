@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/tmdb_client.dart';
 import '../state/app_providers.dart';
 import 'widgets/movie_list_view.dart';
+import 'widgets/credential_dialog.dart';
 import 'widgets/state_panel.dart';
 
 class TrendingScreen extends ConsumerStatefulWidget {
@@ -53,9 +54,9 @@ class _TrendingScreenState extends ConsumerState<TrendingScreen> {
               ? 'TMDB setup required'
               : 'Could not load trending movies',
           message: readableError(error),
-          actionLabel: credentialError ? null : 'Try again',
+          actionLabel: credentialError ? 'Add credential' : 'Try again',
           onAction: credentialError
-              ? null
+              ? () => showTmdbCredentialDialog(context, ref)
               : () => ref.read(trendingProvider.notifier).refresh(),
         );
       },

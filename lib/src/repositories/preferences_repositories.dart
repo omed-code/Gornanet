@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/movie.dart';
@@ -81,4 +82,28 @@ class LocalThemeRepository implements ThemeRepository {
 
   @override
   Future<void> save(ThemeMode mode) => _store.setString(_key, mode.name);
+}
+
+abstract class CredentialRepository {
+  Future<String?> load();
+  Future<void> save(String credential);
+  Future<void> clear();
+}
+
+class SecureCredentialRepository implements CredentialRepository {
+  SecureCredentialRepository({FlutterSecureStorage? storage})
+    : _storage = storage ?? const FlutterSecureStorage();
+
+  static const _key = 'tmdb_credential';
+  final FlutterSecureStorage _storage;
+
+  @override
+  Future<String?> load() => _storage.read(key: _key);
+
+  @override
+  Future<void> save(String credential) =>
+      _storage.write(key: _key, value: credential);
+
+  @override
+  Future<void> clear() => _storage.delete(key: _key);
 }

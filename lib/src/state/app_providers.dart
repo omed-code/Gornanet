@@ -10,8 +10,65 @@ import '../repositories/preferences_repositories.dart';
 const tmdbAccessToken = String.fromEnvironment('TMDB_ACCESS_TOKEN');
 const tmdbApiKey = String.fromEnvironment('TMDB_API_KEY');
 
+final credentialRepositoryProvider = Provider<CredentialRepository>(
+  (ref) => SecureCredentialRepository(),
+);
+
+final tmdbCredentialProvider = NotifierProvider<TmdbCredentialNotifier, String>(
+  TmdbCredentialNotifier.new,
+);
+
+class TmdbCredentialNotifier extends Notifier<String> {
+  String get _compileTimeCredential {
+    if (tmdbApiKey.trim().isNotEmpty) return tmdbApiKey.trim();
+    if (tmdbAccessToken.trim().isNotEmpty) return tmdbAccessToken.trim();
+    return '';
+  }
+
+  @override
+  String build() {
+    Future<void>(_restoreStoredCredential);
+    return _compileTimeCredential;
+  }
+
+  Future<void> _restoreStoredCredential() async {
+    try {
+      final stored = await ref
+          .read(credentialRepositoryProvider)
+          .load()
+          .timeout(const Duration(seconds: 2));
+      if (ref.mounted && stored?.trim().isNotEmpty == true) {
+        state = stored!.trim();
+      }
+    } catch (_) {
+      // Startup must remain usable when platform secure storage is unavailable.
+    }
+  }
+
+  Future<void> save(String rawCredential) async {
+    final credential = rawCredential.trim().replaceFirst(
+      RegExp(r'^Bearer\s+', caseSensitive: false),
+      '',
+    );
+    await ref
+        .read(credentialRepositoryProvider)
+        .save(credential)
+        .timeout(const Duration(seconds: 5));
+    state = credential;
+  }
+
+  Future<void> clear() async {
+    await ref
+        .read(credentialRepositoryProvider)
+        .clear()
+        .timeout(const Duration(seconds: 5));
+    state = _compileTimeCredential;
+  }
+}
+
 final tmdbClientProvider = Provider<TmdbClient>((ref) {
-  final client = TmdbClient(accessToken: tmdbAccessToken, apiKey: tmdbApiKey);
+  final credential = ref.watch(tmdbCredentialProvider);
+  final client = TmdbClient(accessToken: credential);
   ref.onDispose(client.close);
   return client;
 });
@@ -92,6 +149,7 @@ String readableError(Object error) => switch (error) {
 
 final trendingProvider = AsyncNotifierProvider<TrendingNotifier, PagedMovies>(
   TrendingNotifier.new,
+  retry: (retryCount, error) => null,
 );
 
 class TrendingNotifier extends AsyncNotifier<PagedMovies> {

@@ -39,7 +39,7 @@ class TmdbClient {
     if (_accessToken.isEmpty && _apiKey.isEmpty) {
       throw const AppException(
         AppErrorType.configuration,
-        'TMDB credentials are missing. Restart with TMDB_ACCESS_TOKEN (the long API Read Access Token) or TMDB_API_KEY.',
+        'Add your TMDB API Key or long API Read Access Token to continue.',
       );
     }
 
@@ -64,7 +64,7 @@ class TmdbClient {
       if (response.statusCode == 401 || response.statusCode == 403) {
         throw const AppException(
           AppErrorType.unauthorized,
-          'TMDB rejected the credential. Use the long API Read Access Token—not the token name or placeholder—or provide your API Key with TMDB_API_KEY, then fully restart the app.',
+          'TMDB rejected this credential. Paste the actual API Key or long API Read Access Token—not its name or a placeholder.',
         );
       }
       if (response.statusCode < 200 || response.statusCode >= 300) {

@@ -8,6 +8,7 @@ import 'package:goran_net/src/models/movie_page.dart';
 import 'package:goran_net/src/repositories/movie_repository.dart';
 import 'package:goran_net/src/repositories/preferences_repositories.dart';
 import 'package:goran_net/src/state/app_providers.dart';
+import 'package:goran_net/src/ui/widgets/credential_dialog.dart';
 
 Movie movie(int id, [String? title]) => Movie(
   id: id,
@@ -119,11 +120,29 @@ class FakeThemeRepository implements ThemeRepository {
   }
 }
 
+class FakeCredentialRepository implements CredentialRepository {
+  String? credential;
+
+  @override
+  Future<String?> load() async => credential;
+
+  @override
+  Future<void> save(String credential) async {
+    this.credential = credential;
+  }
+
+  @override
+  Future<void> clear() async {
+    credential = null;
+  }
+}
+
 Future<void> pumpMovieApp(
   WidgetTester tester, {
   MovieRepository? movies,
   FakeWatchlistRepository? watchlist,
   FakeThemeRepository? theme,
+  FakeCredentialRepository? credential,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -136,6 +155,9 @@ Future<void> pumpMovieApp(
         ),
         themeRepositoryProvider.overrideWithValue(
           theme ?? FakeThemeRepository(),
+        ),
+        credentialRepositoryProvider.overrideWithValue(
+          credential ?? FakeCredentialRepository(),
         ),
       ],
       child: const MovieApp(),
@@ -164,14 +186,48 @@ void main() {
   testWidgets('shows setup guidance without a useless auth retry', (
     tester,
   ) async {
+    final credentials = FakeCredentialRepository();
     await pumpMovieApp(
       tester,
       movies: FakeMovieRepository(failAuthentication: true),
+      credential: credentials,
     );
 
     expect(find.text('TMDB setup required'), findsOneWidget);
     expect(find.text('TMDB rejected the credential.'), findsOneWidget);
     expect(find.text('Try again'), findsNothing);
+    await tester.tap(find.text('Add credential'));
+    await tester.pumpAndSettle();
+    expect(find.text('Connect to TMDB'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('tmdb-credential-field')),
+      'YOUR_TOKEN',
+    );
+    await tester.tap(find.byKey(const Key('save-tmdb-credential')));
+    await tester.pump();
+    expect(
+      find.text('That is a placeholder, not a real TMDB credential.'),
+      findsOneWidget,
+    );
+
+    const apiKey = '0123456789abcdef0123456789abcdef';
+    await tester.enterText(
+      find.byKey(const Key('tmdb-credential-field')),
+      apiKey,
+    );
+    await tester.tap(find.byKey(const Key('save-tmdb-credential')));
+    await tester.pumpAndSettle();
+    expect(credentials.credential, apiKey);
+  });
+
+  test('credential validation accepts both supported TMDB formats', () {
+    expect(validateTmdbCredential('0123456789abcdef0123456789abcdef'), isNull);
+    expect(
+      validateTmdbCredential('eyJ${List<String>.filled(90, 'a').join()}'),
+      isNull,
+    );
+    expect(validateTmdbCredential('short-invalid-value'), isNotNull);
   });
 
   testWidgets('debounces search and renders its result', (tester) async {
