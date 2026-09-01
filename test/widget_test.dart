@@ -32,6 +32,7 @@ class FakeMovieRepository implements MovieRepository {
   final bool paginated;
   final trendingPages = <int>[];
   final searchQueries = <String>[];
+  final searchCategories = <SearchCategory>[];
 
   @override
   Future<MoviePage> trending({required int page}) async {
@@ -70,8 +71,13 @@ class FakeMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<MoviePage> search({required String query, required int page}) async {
+  Future<MoviePage> search({
+    required String query,
+    required int page,
+    SearchCategory category = SearchCategory.movies,
+  }) async {
     searchQueries.add(query);
+    searchCategories.add(category);
     return MoviePage(
       movies: <Movie>[movie(7, 'Result for $query')],
       page: 1,
@@ -80,7 +86,10 @@ class FakeMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<Movie> details(int movieId) async => Movie(
+  Future<Movie> details(
+    int movieId, {
+    MediaType mediaType = MediaType.movie,
+  }) async => Movie(
     id: movieId,
     title: movieId == 1 ? 'Arrival' : 'Movie $movieId',
     overview: 'Detailed overview',
@@ -88,6 +97,7 @@ class FakeMovieRepository implements MovieRepository {
     backdropPath: null,
     releaseDate: '2025-06-01',
     voteAverage: 8,
+    mediaType: mediaType,
     runtime: 118,
     genres: const <String>['Drama'],
   );
@@ -244,6 +254,33 @@ void main() {
 
     expect(repository.searchQueries, <String>['Dune']);
     expect(find.text('Result for Dune'), findsOneWidget);
+  });
+
+  testWidgets('search switches between movies, series, and anime', (
+    tester,
+  ) async {
+    final repository = FakeMovieRepository();
+    await pumpMovieApp(tester, movies: repository);
+
+    await tester.tap(find.text('Search'));
+    await tester.pumpAndSettle();
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text('Series'), findsOneWidget);
+    expect(find.text('Anime'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('movie-search-field')), 'One');
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Series'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Anime'));
+    await tester.pumpAndSettle();
+
+    expect(repository.searchCategories, <SearchCategory>[
+      SearchCategory.movies,
+      SearchCategory.series,
+      SearchCategory.anime,
+    ]);
   });
 
   testWidgets('adds a movie and renders the persisted watchlist', (

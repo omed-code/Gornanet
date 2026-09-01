@@ -1,3 +1,5 @@
+enum MediaType { movie, tv }
+
 class Movie {
   const Movie({
     required this.id,
@@ -7,6 +9,7 @@ class Movie {
     required this.backdropPath,
     required this.releaseDate,
     required this.voteAverage,
+    this.mediaType = MediaType.movie,
     this.runtime,
     this.genres = const <String>[],
   });
@@ -18,6 +21,7 @@ class Movie {
   final String? backdropPath;
   final String? releaseDate;
   final double voteAverage;
+  final MediaType mediaType;
   final int? runtime;
   final List<String> genres;
 
@@ -33,20 +37,39 @@ class Movie {
       ? null
       : 'https://image.tmdb.org/t/p/w780$backdropPath';
 
-  factory Movie.fromJson(Map<String, dynamic> json) {
+  String get identityKey => '${mediaType.name}:$id';
+
+  factory Movie.fromJson(
+    Map<String, dynamic> json, {
+    MediaType defaultMediaType = MediaType.movie,
+  }) {
     final rawGenres = json['genres'];
+    final rawRuntime = json['episode_run_time'];
+    final mediaType = switch (_string(json['media_type'])) {
+      'tv' => MediaType.tv,
+      'movie' => MediaType.movie,
+      _ => defaultMediaType,
+    };
     return Movie(
       id: (json['id'] as num?)?.toInt() ?? 0,
       title:
           _string(json['title']) ??
           _string(json['original_title']) ??
+          _string(json['name']) ??
+          _string(json['original_name']) ??
           'Untitled',
       overview: _string(json['overview']) ?? '',
       posterPath: _string(json['poster_path']),
       backdropPath: _string(json['backdrop_path']),
-      releaseDate: _string(json['release_date']),
+      releaseDate:
+          _string(json['release_date']) ?? _string(json['first_air_date']),
       voteAverage: (json['vote_average'] as num?)?.toDouble() ?? 0,
-      runtime: (json['runtime'] as num?)?.toInt(),
+      mediaType: mediaType,
+      runtime:
+          (json['runtime'] as num?)?.toInt() ??
+          (rawRuntime is List && rawRuntime.isNotEmpty
+              ? (rawRuntime.first as num?)?.toInt()
+              : null),
       genres: rawGenres is List
           ? rawGenres
                 .whereType<Map>()
@@ -68,6 +91,7 @@ class Movie {
     'backdrop_path': backdropPath,
     'release_date': releaseDate,
     'vote_average': voteAverage,
+    'media_type': mediaType.name,
     'runtime': runtime,
     'genres': genres.map((name) => <String, String>{'name': name}).toList(),
   };
@@ -80,6 +104,7 @@ class Movie {
     backdropPath: details.backdropPath ?? backdropPath,
     releaseDate: details.releaseDate ?? releaseDate,
     voteAverage: details.voteAverage,
+    mediaType: mediaType,
     runtime: details.runtime,
     genres: details.genres,
   );
@@ -90,8 +115,9 @@ class Movie {
   }
 
   @override
-  bool operator ==(Object other) => other is Movie && other.id == id;
+  bool operator ==(Object other) =>
+      other is Movie && other.id == id && other.mediaType == mediaType;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(id, mediaType);
 }

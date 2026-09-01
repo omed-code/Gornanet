@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/app_providers.dart';
+import '../repositories/movie_repository.dart';
 import 'widgets/movie_list_view.dart';
 import 'widgets/state_panel.dart';
 
@@ -96,6 +97,40 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<SearchCategory>(
+              key: const Key('search-category-selector'),
+              segments: const <ButtonSegment<SearchCategory>>[
+                ButtonSegment(
+                  value: SearchCategory.movies,
+                  label: Text('Movies'),
+                  icon: Icon(Icons.movie_outlined),
+                ),
+                ButtonSegment(
+                  value: SearchCategory.series,
+                  label: Text('Series'),
+                  icon: Icon(Icons.tv_outlined),
+                ),
+                ButtonSegment(
+                  value: SearchCategory.anime,
+                  label: Text('Anime'),
+                  icon: Icon(Icons.animation_outlined),
+                ),
+              ],
+              selected: <SearchCategory>{search.category},
+              showSelectedIcon: false,
+              onSelectionChanged: (selection) {
+                _debounce?.cancel();
+                ref
+                    .read(searchProvider.notifier)
+                    .selectCategory(selection.first);
+              },
+            ),
+          ),
+        ),
         Expanded(child: _buildResults(search)),
       ],
     );
@@ -104,9 +139,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildResults(SearchState search) {
     final results = search.results;
     if (results == null) {
-      return const StatePanel(
+      return StatePanel(
         icon: Icons.manage_search,
-        title: 'Find your next movie',
+        title: 'Find your next ${_categoryName(search.category)}',
         message: 'Search by an original, translated, or alternative title.',
       );
     }
@@ -124,7 +159,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           return StatePanel(
             icon: Icons.search_off,
             title: 'No matches',
-            message: 'No movies matched “${search.query}”. Try another title.',
+            message:
+                'No ${_categoryName(search.category, plural: true)} matched “${search.query}”. Try another title.',
           );
         }
         return MovieListView(
@@ -136,4 +172,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       },
     );
   }
+
+  String _categoryName(SearchCategory category, {bool plural = false}) =>
+      switch (category) {
+        SearchCategory.movies => plural ? 'movies' : 'movie',
+        SearchCategory.series => 'series',
+        SearchCategory.anime => 'anime',
+      };
 }

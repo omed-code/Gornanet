@@ -15,7 +15,7 @@ class MovieCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final saved = ref.watch(
       watchlistProvider.select(
-        (state) => state.value?.any((item) => item.id == movie.id) ?? false,
+        (state) => state.value?.contains(movie) ?? false,
       ),
     );
     return Semantics(

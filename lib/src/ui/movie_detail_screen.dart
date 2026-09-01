@@ -40,19 +40,25 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final details = ref.watch(movieDetailsProvider(widget.movie.id));
+    final details = ref.watch(movieDetailsProvider(widget.movie));
     final movie = details.value == null
         ? widget.movie
         : widget.movie.mergeDetails(details.value!);
     final saved = ref.watch(
       watchlistProvider.select(
-        (state) => state.value?.any((item) => item.id == movie.id) ?? false,
+        (state) => state.value?.contains(movie) ?? false,
       ),
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_showCompactTitle ? movie.title : 'Movie details'),
+        title: Text(
+          _showCompactTitle
+              ? movie.title
+              : movie.mediaType == MediaType.tv
+              ? 'Series details'
+              : 'Movie details',
+        ),
       ),
       body: SafeArea(
         top: false,
@@ -80,7 +86,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
                     ),
                     TextButton(
                       onPressed: () =>
-                          ref.invalidate(movieDetailsProvider(widget.movie.id)),
+                          ref.invalidate(movieDetailsProvider(widget.movie)),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -173,7 +179,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
                   const SizedBox(height: 10),
                   Text(
                     movie.overview.isEmpty
-                        ? 'No overview is available for this movie.'
+                        ? 'No overview is available for this title.'
                         : movie.overview,
                     style: Theme.of(
                       context,

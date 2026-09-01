@@ -14,6 +14,7 @@ final credentialRepositoryProvider = Provider<CredentialRepository>(
   (ref) => SecureCredentialRepository(),
 );
 
+<<<<<<< HEAD
 final tmdbCredentialProvider = NotifierProvider<TmdbCredentialNotifier, String>(
   TmdbCredentialNotifier.new,
 );
@@ -43,6 +44,26 @@ class TmdbCredentialNotifier extends Notifier<String> {
     } catch (_) {
       // Startup must remain usable when platform secure storage is unavailable.
     }
+=======
+final tmdbCredentialProvider =
+    AsyncNotifierProvider<TmdbCredentialNotifier, String?>(
+      TmdbCredentialNotifier.new,
+    );
+
+class TmdbCredentialNotifier extends AsyncNotifier<String?> {
+  String? get _compileTimeCredential {
+    if (tmdbApiKey.trim().isNotEmpty) return tmdbApiKey.trim();
+    if (tmdbAccessToken.trim().isNotEmpty) return tmdbAccessToken.trim();
+    return null;
+  }
+
+  @override
+  Future<String?> build() async {
+    final stored = await ref.watch(credentialRepositoryProvider).load();
+    return stored?.trim().isNotEmpty == true
+        ? stored!.trim()
+        : _compileTimeCredential;
+>>>>>>> 14ce313 (new desing)
   }
 
   Future<void> save(String rawCredential) async {
@@ -50,6 +71,7 @@ class TmdbCredentialNotifier extends Notifier<String> {
       RegExp(r'^Bearer\s+', caseSensitive: false),
       '',
     );
+<<<<<<< HEAD
     await ref
         .read(credentialRepositoryProvider)
         .save(credential)
@@ -63,11 +85,24 @@ class TmdbCredentialNotifier extends Notifier<String> {
         .clear()
         .timeout(const Duration(seconds: 5));
     state = _compileTimeCredential;
+=======
+    await ref.read(credentialRepositoryProvider).save(credential);
+    state = AsyncData(credential);
+  }
+
+  Future<void> clear() async {
+    await ref.read(credentialRepositoryProvider).clear();
+    state = AsyncData(_compileTimeCredential);
+>>>>>>> 14ce313 (new desing)
   }
 }
 
 final tmdbClientProvider = Provider<TmdbClient>((ref) {
+<<<<<<< HEAD
   final credential = ref.watch(tmdbCredentialProvider);
+=======
+  final credential = ref.watch(tmdbCredentialProvider).value ?? '';
+>>>>>>> 14ce313 (new desing)
   final client = TmdbClient(accessToken: credential);
   ref.onDispose(client.close);
   return client;
@@ -130,9 +165,11 @@ class PagedMovies {
   );
 
   PagedMovies append(MoviePage next) {
-    final byId = <int, Movie>{for (final movie in movies) movie.id: movie};
+    final byId = <String, Movie>{
+      for (final movie in movies) movie.identityKey: movie,
+    };
     for (final movie in next.movies) {
-      byId[movie.id] = movie;
+      byId[movie.identityKey] = movie;
     }
     return PagedMovies(
       movies: byId.values.toList(growable: false),
@@ -192,13 +229,25 @@ class TrendingNotifier extends AsyncNotifier<PagedMovies> {
 }
 
 class SearchState {
-  const SearchState({this.query = '', this.results});
+  const SearchState({
+    this.query = '',
+    this.category = SearchCategory.movies,
+    this.results,
+  });
 
   final String query;
+  final SearchCategory category;
   final AsyncValue<PagedMovies>? results;
 
-  SearchState copyWith({String? query, AsyncValue<PagedMovies>? results}) =>
-      SearchState(query: query ?? this.query, results: results ?? this.results);
+  SearchState copyWith({
+    String? query,
+    SearchCategory? category,
+    AsyncValue<PagedMovies>? results,
+  }) => SearchState(
+    query: query ?? this.query,
+    category: category ?? this.category,
+    results: results ?? this.results,
+  );
 }
 
 final searchProvider = NotifierProvider<SearchNotifier, SearchState>(
@@ -213,20 +262,26 @@ class SearchNotifier extends Notifier<SearchState> {
 
   Future<void> search(String rawQuery) async {
     final query = rawQuery.trim();
+    final category = state.category;
     final requestId = ++_requestId;
     if (query.isEmpty) {
-      state = const SearchState();
+      state = SearchState(category: category);
       return;
     }
 
-    state = SearchState(query: query, results: const AsyncLoading());
+    state = SearchState(
+      query: query,
+      category: category,
+      results: const AsyncLoading(),
+    );
     try {
       final page = await ref
           .read(movieRepositoryProvider)
-          .search(query: query, page: 1);
+          .search(query: query, page: 1, category: category);
       if (requestId == _requestId) {
         state = SearchState(
           query: query,
+          category: category,
           results: AsyncData(PagedMovies.fromPage(page)),
         );
       }
@@ -234,16 +289,25 @@ class SearchNotifier extends Notifier<SearchState> {
       if (requestId == _requestId) {
         state = SearchState(
           query: query,
+          category: category,
           results: AsyncError(error, stackTrace),
         );
       }
     }
   }
 
+  Future<void> selectCategory(SearchCategory category) async {
+    if (category == state.category) return;
+    final query = state.query;
+    state = SearchState(query: query, category: category);
+    if (query.isNotEmpty) await search(query);
+  }
+
   Future<void> retry() => search(state.query);
 
   Future<void> loadMore() async {
     final query = state.query;
+    final category = state.category;
     final current = state.results?.value;
     if (current == null || current.isLoadingMore || !current.canLoadMore) {
       return;
@@ -257,7 +321,7 @@ class SearchNotifier extends Notifier<SearchState> {
     try {
       final page = await ref
           .read(movieRepositoryProvider)
-          .search(query: query, page: current.page + 1);
+          .search(query: query, page: current.page + 1, category: category);
       if (requestId == _requestId) {
         state = state.copyWith(results: AsyncData(current.append(page)));
       }
@@ -284,13 +348,12 @@ class WatchlistNotifier extends AsyncNotifier<List<Movie>> {
   @override
   Future<List<Movie>> build() => ref.watch(watchlistRepositoryProvider).load();
 
-  bool contains(int movieId) =>
-      state.value?.any((movie) => movie.id == movieId) ?? false;
+  bool contains(Movie movie) => state.value?.contains(movie) ?? false;
 
   Future<void> toggle(Movie movie) async {
     final previous = state.value ?? const <Movie>[];
-    final updated = previous.any((item) => item.id == movie.id)
-        ? previous.where((item) => item.id != movie.id).toList(growable: false)
+    final updated = previous.contains(movie)
+        ? previous.where((item) => item != movie).toList(growable: false)
         : <Movie>[movie, ...previous];
     state = AsyncData(updated);
     try {
@@ -322,6 +385,8 @@ class ThemeModeNotifier extends AsyncNotifier<ThemeMode> {
   }
 }
 
-final movieDetailsProvider = FutureProvider.autoDispose.family<Movie, int>(
-  (ref, movieId) => ref.watch(movieRepositoryProvider).details(movieId),
+final movieDetailsProvider = FutureProvider.autoDispose.family<Movie, Movie>(
+  (ref, movie) => ref
+      .watch(movieRepositoryProvider)
+      .details(movie.id, mediaType: movie.mediaType),
 );

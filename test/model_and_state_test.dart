@@ -45,6 +45,30 @@ void main() {
       });
       expect(page.movies.map((movie) => movie.id), <int>[1]);
     });
+
+    test('parses TV titles and anime media types', () {
+      final page = MoviePage.fromJson(<String, dynamic>{
+        'results': <Object?>[
+          <String, dynamic>{
+            'id': 7,
+            'name': 'Frieren',
+            'first_air_date': '2023-09-29',
+            'media_type': 'tv',
+            'genre_ids': <int>[16, 10765],
+          },
+          <String, dynamic>{
+            'id': 8,
+            'title': 'Not animated',
+            'media_type': 'movie',
+            'genre_ids': <int>[18],
+          },
+        ],
+      }, animeOnly: true);
+
+      expect(page.movies.single.title, 'Frieren');
+      expect(page.movies.single.mediaType, MediaType.tv);
+      expect(page.movies.single.releaseYear, '2023');
+    });
   });
 
   test('pagination merges pages and removes duplicate movie ids', () {

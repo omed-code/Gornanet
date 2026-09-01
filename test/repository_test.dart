@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:goran_net/src/core/tmdb_client.dart';
 import 'package:goran_net/src/models/movie.dart';
+import 'package:goran_net/src/repositories/movie_repository.dart';
 import 'package:goran_net/src/repositories/preferences_repositories.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -106,6 +107,55 @@ void main() {
 
     expect(captured.url.queryParameters['api_key'], apiKey);
     expect(captured.headers, isNot(contains('Authorization')));
+  });
+
+  test('search categories use the matching TMDB endpoints', () async {
+    final paths = <String>[];
+    final client = TmdbClient(
+      accessToken: '0123456789abcdef0123456789abcdef',
+      client: MockClient((request) async {
+        paths.add(request.url.path);
+        return http.Response('{"page":1,"total_pages":1,"results":[]}', 200);
+      }),
+    );
+    final repository = TmdbMovieRepository(client);
+
+    await repository.search(query: 'Arcane', page: 1);
+    await repository.search(
+      query: 'Arcane',
+      page: 1,
+      category: SearchCategory.series,
+    );
+    await repository.search(
+      query: 'Arcane',
+      page: 1,
+      category: SearchCategory.anime,
+    );
+
+    expect(paths, <String>[
+      '/3/search/movie',
+      '/3/search/tv',
+      '/3/search/multi',
+    ]);
+  });
+
+  test('TV details use the TV endpoint and retain their media type', () async {
+    late String path;
+    final client = TmdbClient(
+      accessToken: '0123456789abcdef0123456789abcdef',
+      client: MockClient((request) async {
+        path = request.url.path;
+        return http.Response('{"id":7,"name":"Arcane"}', 200);
+      }),
+    );
+
+    final result = await TmdbMovieRepository(
+      client,
+    ).details(7, mediaType: MediaType.tv);
+
+    expect(path, '/3/tv/7');
+    expect(result.title, 'Arcane');
+    expect(result.mediaType, MediaType.tv);
   });
 
   test('watchlist round-trips complete local movie summaries', () async {
