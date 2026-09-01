@@ -207,6 +207,94 @@ class TrendingNotifier extends AsyncNotifier<PagedMovies> {
   }
 }
 
+class HomeFeed {
+  const HomeFeed({
+    required this.movies,
+    required this.series,
+    required this.anime,
+    required this.genre,
+    required this.genrePicks,
+    this.isGenreLoading = false,
+  });
+
+  final List<Movie> movies;
+  final List<Movie> series;
+  final List<Movie> anime;
+  final BrowseGenre genre;
+  final List<Movie> genrePicks;
+  final bool isGenreLoading;
+
+  HomeFeed copyWith({
+    BrowseGenre? genre,
+    List<Movie>? genrePicks,
+    bool? isGenreLoading,
+  }) => HomeFeed(
+    movies: movies,
+    series: series,
+    anime: anime,
+    genre: genre ?? this.genre,
+    genrePicks: genrePicks ?? this.genrePicks,
+    isGenreLoading: isGenreLoading ?? this.isGenreLoading,
+  );
+}
+
+final homeFeedProvider = AsyncNotifierProvider<HomeFeedNotifier, HomeFeed>(
+  HomeFeedNotifier.new,
+  retry: (retryCount, error) => null,
+);
+
+class HomeFeedNotifier extends AsyncNotifier<HomeFeed> {
+  @override
+  Future<HomeFeed> build() => _load(watchRepository: true);
+
+  Future<HomeFeed> _load({required bool watchRepository}) async {
+    await ref.read(tmdbCredentialProvider.notifier).ready;
+    final repository = watchRepository
+        ? ref.watch(movieRepositoryProvider)
+        : ref.read(movieRepositoryProvider);
+    final pages = await Future.wait<MoviePage>(<Future<MoviePage>>[
+      repository.trending(page: 1),
+      repository.browse(page: 1, category: SearchCategory.series),
+      repository.browse(page: 1, category: SearchCategory.anime),
+      repository.browseGenre(genre: BrowseGenre.action, page: 1),
+    ]);
+    return HomeFeed(
+      movies: pages[0].movies.take(5).toList(growable: false),
+      series: pages[1].movies.take(5).toList(growable: false),
+      anime: pages[2].movies.take(5).toList(growable: false),
+      genre: BrowseGenre.action,
+      genrePicks: pages[3].movies.take(5).toList(growable: false),
+    );
+  }
+
+  Future<void> selectGenre(BrowseGenre genre) async {
+    final current = state.value;
+    if (current == null || current.genre == genre || current.isGenreLoading) {
+      return;
+    }
+    state = AsyncData(current.copyWith(genre: genre, isGenreLoading: true));
+    try {
+      final page = await ref
+          .read(movieRepositoryProvider)
+          .browseGenre(genre: genre, page: 1);
+      state = AsyncData(
+        current.copyWith(
+          genre: genre,
+          genrePicks: page.movies.take(5).toList(growable: false),
+          isGenreLoading: false,
+        ),
+      );
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+    }
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncLoading<HomeFeed>();
+    state = await AsyncValue.guard(() => _load(watchRepository: false));
+  }
+}
+
 class SearchState {
   const SearchState({
     this.query = '',

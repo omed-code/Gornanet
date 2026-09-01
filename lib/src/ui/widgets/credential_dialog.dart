@@ -34,6 +34,7 @@ Future<void> showTmdbCredentialDialog(
   );
   if (saved == true) {
     ref.invalidate(trendingProvider);
+    ref.invalidate(homeFeedProvider);
     ref.invalidate(searchProvider);
     ref.invalidate(movieDetailsProvider);
   }

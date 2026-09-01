@@ -162,6 +162,25 @@ void main() {
     expect(requests.last.url.queryParameters['with_genres'], '16');
   });
 
+  test('genre browsing sends the selected TMDB genre id', () async {
+    late http.Request captured;
+    final client = TmdbClient(
+      accessToken: '0123456789abcdef0123456789abcdef',
+      client: MockClient((request) async {
+        captured = request;
+        return http.Response('{"page":1,"total_pages":1,"results":[]}', 200);
+      }),
+    );
+
+    await TmdbMovieRepository(
+      client,
+    ).browseGenre(genre: BrowseGenre.horror, page: 2);
+
+    expect(captured.url.path, '/3/discover/movie');
+    expect(captured.url.queryParameters['with_genres'], '27');
+    expect(captured.url.queryParameters['page'], '2');
+  });
+
   test('TV details use the TV endpoint and retain their media type', () async {
     late String path;
     final client = TmdbClient(

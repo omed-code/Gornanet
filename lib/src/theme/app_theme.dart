@@ -121,8 +121,17 @@ abstract final class AppTheme {
       chipTheme: ChipThemeData(
         side: BorderSide.none,
         backgroundColor: scheme.surfaceContainer,
+        selectedColor: scheme.primaryContainer,
+        checkmarkColor: scheme.onPrimaryContainer,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        labelStyle: TextStyle(
+          color: scheme.onSurface,
+          fontWeight: FontWeight.w600,
+        ),
+        secondaryLabelStyle: TextStyle(
+          color: scheme.onPrimaryContainer,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant),
       snackBarTheme: SnackBarThemeData(

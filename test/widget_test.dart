@@ -34,6 +34,7 @@ class FakeMovieRepository implements MovieRepository {
   final bool paginated;
   final trendingPages = <int>[];
   final browseCategories = <SearchCategory>[];
+  final browsedGenres = <BrowseGenre>[];
   final searchQueries = <String>[];
   final searchCategories = <SearchCategory>[];
 
@@ -50,6 +51,19 @@ class FakeMovieRepository implements MovieRepository {
     };
     return MoviePage(
       movies: <Movie>[movie(20 + category.index, label)],
+      page: 1,
+      totalPages: 1,
+    );
+  }
+
+  @override
+  Future<MoviePage> browseGenre({
+    required BrowseGenre genre,
+    required int page,
+  }) async {
+    browsedGenres.add(genre);
+    return MoviePage(
+      movies: <Movie>[movie(50 + genre.index, '${genre.label} pick')],
       page: 1,
       totalPages: 1,
     );
@@ -223,7 +237,12 @@ void main() {
     expect(appBar.centerTitle, isFalse);
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
-    expect(find.byKey(const Key('movie-list')), findsOneWidget);
+    expect(find.byKey(const Key('home-sections-list')), findsOneWidget);
+    final moviesCarousel = tester.widget<ListView>(
+      find.byKey(const Key('movies-horizontal-list')),
+    );
+    expect(moviesCarousel.scrollDirection, Axis.horizontal);
+    expect(find.text('Movies'), findsOneWidget);
     expect(find.byKey(const Key('modern-bottom-navigation')), findsOneWidget);
   });
 
@@ -368,7 +387,6 @@ void main() {
     await tester.tap(find.text('Search'));
     await tester.pumpAndSettle();
     expect(find.text('Movies'), findsOneWidget);
-    expect(find.text('Series'), findsOneWidget);
     expect(find.text('Anime'), findsOneWidget);
     expect(find.text('Popular movie'), findsOneWidget);
 
@@ -425,7 +443,16 @@ void main() {
     final watchlist = FakeWatchlistRepository();
     await pumpMovieApp(tester, watchlist: watchlist);
 
-    await tester.tap(find.byTooltip('Add to watchlist').first);
+    final arrivalCard = find.ancestor(
+      of: find.text('Arrival'),
+      matching: find.byType(Card),
+    );
+    await tester.tap(
+      find.descendant(
+        of: arrivalCard,
+        matching: find.byTooltip('Add to watchlist'),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(watchlist.movies.single.title, 'Arrival');
 
@@ -485,18 +512,42 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('loads a second trending page near the list end', (tester) async {
-    final repository = FakeMovieRepository(paginated: true);
-    await pumpMovieApp(tester, movies: repository);
+  testWidgets('home media sections scroll vertically', (tester) async {
+    await pumpMovieApp(tester);
 
-    await tester.fling(
-      find.byKey(const Key('movie-list')),
-      const Offset(0, -2200),
-      3000,
+    await tester.scrollUntilVisible(
+      find.text('Anime'),
+      500,
+      scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
 
-    expect(repository.trendingPages, contains(2));
-    expect(find.text('Page two movie'), findsOneWidget);
+    expect(find.text('Anime'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('genre filters load a horizontal carousel', (tester) async {
+    final repository = FakeMovieRepository();
+    await pumpMovieApp(tester, movies: repository);
+
+    await tester.scrollUntilVisible(
+      find.text('Genres'),
+      500,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    final comedyChip = tester.widget<ChoiceChip>(
+      find.byKey(const Key('genre-comedy')),
+    );
+    expect(comedyChip.labelStyle?.color, isNot(Colors.white));
+    await tester.tap(find.byKey(const Key('genre-comedy')));
+    await tester.pumpAndSettle();
+
+    expect(repository.browsedGenres, contains(BrowseGenre.comedy));
+    expect(find.text('Comedy pick'), findsOneWidget);
+    final carousel = tester.widget<ListView>(
+      find.byKey(const Key('genre-picks-horizontal-list')),
+    );
+    expect(carousel.scrollDirection, Axis.horizontal);
   });
 }

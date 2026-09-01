@@ -6,11 +6,29 @@ import '../models/movie_page.dart';
 
 enum SearchCategory { movies, series, anime }
 
+enum BrowseGenre {
+  action(28, 'Action'),
+  comedy(35, 'Comedy'),
+  drama(18, 'Drama'),
+  horror(27, 'Horror'),
+  scienceFiction(878, 'Sci-Fi'),
+  romance(10749, 'Romance');
+
+  const BrowseGenre(this.id, this.label);
+
+  final int id;
+  final String label;
+}
+
 abstract class MovieRepository {
   Future<MoviePage> trending({required int page});
   Future<MoviePage> browse({
     required int page,
     SearchCategory category = SearchCategory.movies,
+  });
+  Future<MoviePage> browseGenre({
+    required BrowseGenre genre,
+    required int page,
   });
   Future<MoviePage> search({
     required String query,
@@ -64,6 +82,23 @@ class TmdbMovieRepository implements MovieRepository {
           ? MediaType.movie
           : MediaType.tv,
     );
+  }
+
+  @override
+  Future<MoviePage> browseGenre({
+    required BrowseGenre genre,
+    required int page,
+  }) async {
+    final json = await _client.get(
+      '/discover/movie',
+      query: <String, String>{
+        'page': '$page',
+        'with_genres': '${genre.id}',
+        'sort_by': 'popularity.desc',
+        'include_adult': 'false',
+      },
+    );
+    return MoviePage.fromJson(json);
   }
 
   @override
