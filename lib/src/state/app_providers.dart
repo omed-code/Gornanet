@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,12 +16,15 @@ final credentialRepositoryProvider = Provider<CredentialRepository>(
   (ref) => SecureCredentialRepository(),
 );
 
-<<<<<<< HEAD
 final tmdbCredentialProvider = NotifierProvider<TmdbCredentialNotifier, String>(
   TmdbCredentialNotifier.new,
 );
 
 class TmdbCredentialNotifier extends Notifier<String> {
+  final Completer<void> _ready = Completer<void>();
+
+  Future<void> get ready => _ready.future;
+
   String get _compileTimeCredential {
     if (tmdbApiKey.trim().isNotEmpty) return tmdbApiKey.trim();
     if (tmdbAccessToken.trim().isNotEmpty) return tmdbAccessToken.trim();
@@ -28,8 +33,12 @@ class TmdbCredentialNotifier extends Notifier<String> {
 
   @override
   String build() {
+    final initialCredential = _compileTimeCredential;
+    if (initialCredential.isNotEmpty && !_ready.isCompleted) {
+      _ready.complete();
+    }
     Future<void>(_restoreStoredCredential);
-    return _compileTimeCredential;
+    return initialCredential;
   }
 
   Future<void> _restoreStoredCredential() async {
@@ -43,27 +52,9 @@ class TmdbCredentialNotifier extends Notifier<String> {
       }
     } catch (_) {
       // Startup must remain usable when platform secure storage is unavailable.
+    } finally {
+      if (!_ready.isCompleted) _ready.complete();
     }
-=======
-final tmdbCredentialProvider =
-    AsyncNotifierProvider<TmdbCredentialNotifier, String?>(
-      TmdbCredentialNotifier.new,
-    );
-
-class TmdbCredentialNotifier extends AsyncNotifier<String?> {
-  String? get _compileTimeCredential {
-    if (tmdbApiKey.trim().isNotEmpty) return tmdbApiKey.trim();
-    if (tmdbAccessToken.trim().isNotEmpty) return tmdbAccessToken.trim();
-    return null;
-  }
-
-  @override
-  Future<String?> build() async {
-    final stored = await ref.watch(credentialRepositoryProvider).load();
-    return stored?.trim().isNotEmpty == true
-        ? stored!.trim()
-        : _compileTimeCredential;
->>>>>>> 14ce313 (new desing)
   }
 
   Future<void> save(String rawCredential) async {
@@ -71,7 +62,6 @@ class TmdbCredentialNotifier extends AsyncNotifier<String?> {
       RegExp(r'^Bearer\s+', caseSensitive: false),
       '',
     );
-<<<<<<< HEAD
     await ref
         .read(credentialRepositoryProvider)
         .save(credential)
@@ -85,24 +75,11 @@ class TmdbCredentialNotifier extends AsyncNotifier<String?> {
         .clear()
         .timeout(const Duration(seconds: 5));
     state = _compileTimeCredential;
-=======
-    await ref.read(credentialRepositoryProvider).save(credential);
-    state = AsyncData(credential);
-  }
-
-  Future<void> clear() async {
-    await ref.read(credentialRepositoryProvider).clear();
-    state = AsyncData(_compileTimeCredential);
->>>>>>> 14ce313 (new desing)
   }
 }
 
 final tmdbClientProvider = Provider<TmdbClient>((ref) {
-<<<<<<< HEAD
   final credential = ref.watch(tmdbCredentialProvider);
-=======
-  final credential = ref.watch(tmdbCredentialProvider).value ?? '';
->>>>>>> 14ce313 (new desing)
   final client = TmdbClient(accessToken: credential);
   ref.onDispose(client.close);
   return client;
@@ -192,6 +169,7 @@ final trendingProvider = AsyncNotifierProvider<TrendingNotifier, PagedMovies>(
 class TrendingNotifier extends AsyncNotifier<PagedMovies> {
   @override
   Future<PagedMovies> build() async {
+    await ref.read(tmdbCredentialProvider.notifier).ready;
     final page = await ref.watch(movieRepositoryProvider).trending(page: 1);
     return PagedMovies.fromPage(page);
   }
@@ -199,6 +177,7 @@ class TrendingNotifier extends AsyncNotifier<PagedMovies> {
   Future<void> refresh() async {
     state = const AsyncLoading<PagedMovies>();
     state = await AsyncValue.guard(() async {
+      await ref.read(tmdbCredentialProvider.notifier).ready;
       final page = await ref.read(movieRepositoryProvider).trending(page: 1);
       return PagedMovies.fromPage(page);
     });
@@ -265,6 +244,7 @@ class SearchNotifier extends Notifier<SearchState> {
     final requestId = ++_requestId;
     state = SearchState(category: category, results: const AsyncLoading());
     try {
+      await ref.read(tmdbCredentialProvider.notifier).ready;
       final page = await ref
           .read(movieRepositoryProvider)
           .browse(page: 1, category: category);
@@ -299,6 +279,7 @@ class SearchNotifier extends Notifier<SearchState> {
       results: const AsyncLoading(),
     );
     try {
+      await ref.read(tmdbCredentialProvider.notifier).ready;
       final page = await ref
           .read(movieRepositoryProvider)
           .search(query: query, page: 1, category: category);
@@ -418,8 +399,12 @@ class ThemeModeNotifier extends AsyncNotifier<ThemeMode> {
   }
 }
 
-final movieDetailsProvider = FutureProvider.autoDispose.family<Movie, Movie>(
-  (ref, movie) => ref
+final movieDetailsProvider = FutureProvider.autoDispose.family<Movie, Movie>((
+  ref,
+  movie,
+) async {
+  await ref.read(tmdbCredentialProvider.notifier).ready;
+  return ref
       .watch(movieRepositoryProvider)
-      .details(movie.id, mediaType: movie.mediaType),
-);
+      .details(movie.id, mediaType: movie.mediaType);
+});

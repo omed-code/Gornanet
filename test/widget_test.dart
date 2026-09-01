@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -166,6 +168,19 @@ class FakeCredentialRepository implements CredentialRepository {
   }
 }
 
+class DelayedCredentialRepository implements CredentialRepository {
+  final loadCompleter = Completer<String?>();
+
+  @override
+  Future<String?> load() => loadCompleter.future;
+
+  @override
+  Future<void> save(String credential) async {}
+
+  @override
+  Future<void> clear() async {}
+}
+
 Future<void> pumpMovieApp(
   WidgetTester tester, {
   MovieRepository? movies,
@@ -202,6 +217,47 @@ void main() {
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
     expect(find.byKey(const Key('movie-list')), findsOneWidget);
+  });
+
+  testWidgets('app bar search button opens the search tab', (tester) async {
+    await pumpMovieApp(tester);
+
+    await tester.tap(find.byKey(const Key('app-bar-search')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Find a title'), findsOneWidget);
+    expect(find.byKey(const Key('search-category-selector')), findsOneWidget);
+  });
+
+  testWidgets('search waits for the saved credential during startup', (
+    tester,
+  ) async {
+    final credentials = DelayedCredentialRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(FakeMovieRepository()),
+          watchlistRepositoryProvider.overrideWithValue(
+            FakeWatchlistRepository(),
+          ),
+          themeRepositoryProvider.overrideWithValue(FakeThemeRepository()),
+          credentialRepositoryProvider.overrideWithValue(credentials),
+        ],
+        child: const MovieApp(),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('app-bar-search')));
+    await tester.pump();
+
+    expect(find.byType(CircularProgressIndicator), findsWidgets);
+    expect(find.text('Search failed'), findsNothing);
+
+    credentials.loadCompleter.complete('stored-token');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Popular movie'), findsOneWidget);
+    expect(find.text('Search failed'), findsNothing);
   });
 
   testWidgets('shows a retryable network error state', (tester) async {

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../state/app_providers.dart';
+import '../core/tmdb_client.dart';
 import '../repositories/movie_repository.dart';
+import '../state/app_providers.dart';
+import 'widgets/credential_dialog.dart';
 import 'widgets/movie_list_view.dart';
 import 'widgets/state_panel.dart';
 
@@ -148,13 +150,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
     return results.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => StatePanel(
-        icon: Icons.wifi_off_outlined,
-        title: 'Search failed',
-        message: readableError(error),
-        actionLabel: 'Try again',
-        onAction: () => ref.read(searchProvider.notifier).retry(),
-      ),
+      error: (error, _) {
+        final credentialError =
+            error is AppException &&
+            (error.type == AppErrorType.configuration ||
+                error.type == AppErrorType.unauthorized);
+        return StatePanel(
+          icon: credentialError
+              ? Icons.key_off_outlined
+              : Icons.wifi_off_outlined,
+          title: credentialError ? 'TMDB setup required' : 'Search failed',
+          message: readableError(error),
+          actionLabel: credentialError ? 'Add credential' : 'Try again',
+          onAction: credentialError
+              ? () => showTmdbCredentialDialog(context, ref)
+              : () => ref.read(searchProvider.notifier).retry(),
+        );
+      },
       data: (data) {
         if (data.movies.isEmpty) {
           return StatePanel(
