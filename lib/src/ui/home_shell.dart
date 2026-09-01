@@ -95,45 +95,135 @@ class _HomeShellState extends ConsumerState<HomeShell> {
       ),
       bottomNavigationBar: SafeArea(
         top: false,
-        minimum: const EdgeInsets.only(bottom: 8),
+        minimum: const EdgeInsets.only(bottom: 6),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Material(
             key: const Key('modern-bottom-navigation'),
-            elevation: 10,
+            elevation: 6,
             shadowColor: Theme.of(
               context,
-            ).colorScheme.shadow.withValues(alpha: .18),
+            ).colorScheme.shadow.withValues(alpha: .12),
             color: Theme.of(context).colorScheme.surfaceContainer,
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(32),
               side: BorderSide(
                 color: Theme.of(
                   context,
                 ).colorScheme.outlineVariant.withValues(alpha: .75),
               ),
             ),
-            child: NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: (index) => setState(() => _index = index),
-              destinations: const <NavigationDestination>[
-                NavigationDestination(
-                  icon: Icon(Icons.local_fire_department_outlined),
-                  selectedIcon: Icon(Icons.local_fire_department_rounded),
-                  label: 'Trending',
+            child: SizedBox(
+              height: 64,
+              child: Padding(
+                padding: const EdgeInsets.all(5),
+                child: Row(
+                  children: <Widget>[
+                    _BottomNavigationItem(
+                      label: 'Trending',
+                      icon: Icons.local_fire_department_outlined,
+                      selectedIcon: Icons.local_fire_department_rounded,
+                      selected: _index == 0,
+                      onTap: () => setState(() => _index = 0),
+                    ),
+                    _BottomNavigationItem(
+                      label: 'Search',
+                      icon: Icons.search_rounded,
+                      selectedIcon: Icons.manage_search_rounded,
+                      selected: _index == 1,
+                      onTap: () => setState(() => _index = 1),
+                    ),
+                    _BottomNavigationItem(
+                      label: 'Watchlist',
+                      icon: Icons.bookmark_border_rounded,
+                      selectedIcon: Icons.bookmark_rounded,
+                      selected: _index == 2,
+                      onTap: () => setState(() => _index = 2),
+                    ),
+                  ],
                 ),
-                NavigationDestination(
-                  icon: Icon(Icons.search_rounded),
-                  selectedIcon: Icon(Icons.manage_search_rounded),
-                  label: 'Search',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BottomNavigationItem extends StatelessWidget {
+  const _BottomNavigationItem({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Expanded(
+      child: Semantics(
+        selected: selected,
+        button: true,
+        label: label,
+        child: AnimatedContainer(
+          key: Key('bottom-navigation-$label'),
+          duration: const Duration(milliseconds: 320),
+          curve: Curves.easeInOutCubic,
+          decoration: BoxDecoration(
+            color: selected
+                ? scheme.surfaceContainerHighest
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(27),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(27),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 260),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      child: Icon(
+                        selected ? selectedIcon : icon,
+                        key: ValueKey<bool>(selected),
+                        size: 22,
+                        color: selected
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: selected
+                            ? scheme.onSurface
+                            : scheme.onSurfaceVariant,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                NavigationDestination(
-                  icon: Icon(Icons.bookmark_border_rounded),
-                  selectedIcon: Icon(Icons.bookmark_rounded),
-                  label: 'Watchlist',
-                ),
-              ],
+              ),
             ),
           ),
         ),
