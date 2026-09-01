@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,18 +64,21 @@ class TrendingScreen extends ConsumerWidget {
                 title: 'Movies',
                 icon: Icons.movie_outlined,
                 movies: data.movies,
+                autoScrollInterval: const Duration(seconds: 6),
               ),
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Series',
                 icon: Icons.tv_outlined,
                 movies: data.series,
+                autoScrollInterval: const Duration(seconds: 7),
               ),
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Anime',
                 icon: Icons.animation_outlined,
                 movies: data.anime,
+                autoScrollInterval: const Duration(seconds: 8),
               ),
             ],
           ),
@@ -150,19 +155,11 @@ class _GenreSection extends StatelessWidget {
             child: Text('No titles are available for this genre right now.'),
           )
         else
-          SizedBox(
-            height: 156,
-            child: ListView.separated(
-              key: const Key('genre-picks-horizontal-list'),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: feed.genrePicks.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, index) => SizedBox(
-                width: cardWidth,
-                child: MovieCard(movie: feed.genrePicks[index]),
-              ),
-            ),
+          _AutoScrollingMovieCarousel(
+            listKey: const Key('genre-picks-horizontal-list'),
+            movies: feed.genrePicks,
+            cardWidth: cardWidth,
+            autoScrollInterval: const Duration(seconds: 5),
           ),
       ],
     );
@@ -174,11 +171,13 @@ class _MediaSection extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.movies,
+    required this.autoScrollInterval,
   });
 
   final String title;
   final IconData icon;
   final List<Movie> movies;
+  final Duration autoScrollInterval;
 
   @override
   Widget build(BuildContext context) {
@@ -203,21 +202,100 @@ class _MediaSection extends StatelessWidget {
             child: Text('No titles are available right now.'),
           )
         else
-          SizedBox(
-            height: 156,
-            child: ListView.separated(
-              key: Key('${title.toLowerCase()}-horizontal-list'),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: movies.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 12),
-              itemBuilder: (context, index) => SizedBox(
-                width: cardWidth,
-                child: MovieCard(movie: movies[index]),
-              ),
-            ),
+          _AutoScrollingMovieCarousel(
+            listKey: Key('${title.toLowerCase()}-horizontal-list'),
+            movies: movies,
+            cardWidth: cardWidth,
+            autoScrollInterval: autoScrollInterval,
           ),
       ],
+    );
+  }
+}
+
+class _AutoScrollingMovieCarousel extends StatefulWidget {
+  const _AutoScrollingMovieCarousel({
+    required this.listKey,
+    required this.movies,
+    required this.cardWidth,
+    required this.autoScrollInterval,
+  });
+
+  final Key listKey;
+  final List<Movie> movies;
+  final double cardWidth;
+  final Duration autoScrollInterval;
+
+  @override
+  State<_AutoScrollingMovieCarousel> createState() =>
+      _AutoScrollingMovieCarouselState();
+}
+
+class _AutoScrollingMovieCarouselState
+    extends State<_AutoScrollingMovieCarousel> {
+  static const _spacing = 12.0;
+  late final ScrollController _controller;
+  Timer? _timer;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = ScrollController();
+    _startTimer();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AutoScrollingMovieCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.movies != widget.movies ||
+        oldWidget.autoScrollInterval != widget.autoScrollInterval) {
+      _currentIndex = 0;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _controller.hasClients) _controller.jumpTo(0);
+      });
+      _startTimer();
+    }
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    if (widget.movies.length < 2) return;
+    _timer = Timer.periodic(widget.autoScrollInterval, (_) {
+      if (!mounted || !_controller.hasClients) return;
+      _currentIndex = (_currentIndex + 1) % widget.movies.length;
+      final target = _currentIndex * (widget.cardWidth + _spacing);
+      _controller.animateTo(
+        target.clamp(0, _controller.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 156,
+      child: ListView.separated(
+        key: widget.listKey,
+        controller: _controller,
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: widget.movies.length,
+        separatorBuilder: (_, _) => const SizedBox(width: _spacing),
+        itemBuilder: (context, index) => SizedBox(
+          width: widget.cardWidth,
+          child: MovieCard(movie: widget.movies[index]),
+        ),
+      ),
     );
   }
 }

@@ -550,4 +550,21 @@ void main() {
     );
     expect(carousel.scrollDirection, Axis.horizontal);
   });
+
+  testWidgets('movie carousel advances on its staggered six-second timer', (
+    tester,
+  ) async {
+    await pumpMovieApp(tester, movies: FakeMovieRepository(paginated: true));
+    final carousel = tester.widget<ListView>(
+      find.byKey(const Key('movies-horizontal-list')),
+    );
+    expect(carousel.controller?.offset, 0);
+
+    await tester.pump(const Duration(seconds: 5));
+    expect(carousel.controller?.offset, 0);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(carousel.controller?.offset, greaterThan(0));
+  });
 }
