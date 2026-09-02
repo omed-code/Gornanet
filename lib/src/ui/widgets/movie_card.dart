@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../models/movie.dart';
 import '../../state/app_providers.dart';
@@ -129,7 +130,7 @@ class MovieCard extends ConsumerWidget {
                               ),
                               const SizedBox(width: 8),
                               Icon(
-                                Icons.arrow_outward_rounded,
+                                Symbols.arrow_outward_rounded,
                                 size: 15,
                                 color: Theme.of(context).colorScheme.secondary,
                               ),
@@ -209,10 +210,10 @@ class _RatingBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(Icons.star_rounded, color: Color(0xFFFFC44D), size: 15),
+          const Icon(Symbols.star_rounded, color: Color(0xFFFFC44D), size: 15),
           const SizedBox(width: 3),
           Text(
-            rating.toStringAsFixed(1),
+            rating > 0 ? rating.toStringAsFixed(1) : 'NR',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 12,
@@ -241,7 +242,7 @@ class _WatchlistButton extends StatelessWidget {
       icon: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
         child: Icon(
-          saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          saved ? Symbols.bookmark_rounded : Symbols.bookmark_border_rounded,
           key: ValueKey<bool>(saved),
         ),
       ),

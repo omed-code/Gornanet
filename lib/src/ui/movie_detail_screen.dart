@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../models/movie.dart';
 import '../state/app_providers.dart';
@@ -77,7 +78,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   children: <Widget>[
-                    const Icon(Icons.cloud_off_outlined),
+                    const Icon(Symbols.cloud_off),
                     const SizedBox(width: 10),
                     const Expanded(
                       child: Text(
@@ -98,7 +99,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'MOVIE',
+                    movie.mediaType == MediaType.tv ? 'SERIES' : 'MOVIE',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w900,
@@ -117,17 +118,19 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
                       _Metadata(
-                        icon: Icons.star_rounded,
-                        label: movie.voteAverage.toStringAsFixed(1),
+                        icon: Symbols.star_rounded,
+                        label: movie.voteAverage > 0
+                            ? movie.voteAverage.toStringAsFixed(1)
+                            : 'NR',
                         iconColor: Colors.amber,
                       ),
                       _Metadata(
-                        icon: Icons.calendar_today,
+                        icon: Symbols.calendar_today,
                         label: movie.releaseYear,
                       ),
                       if (movie.runtime != null)
                         _Metadata(
-                          icon: Icons.schedule,
+                          icon: Symbols.schedule,
                           label: '${movie.runtime} min',
                         ),
                     ],
@@ -162,7 +165,7 @@ class _MovieDetailScreenState extends ConsumerState<MovieDetailScreen> {
                         }
                       },
                       icon: Icon(
-                        saved ? Icons.bookmark_remove : Icons.bookmark_add,
+                        saved ? Symbols.bookmark_remove : Symbols.bookmark_add,
                       ),
                       label: Text(
                         saved ? 'Remove from watchlist' : 'Add to watchlist',
@@ -236,13 +239,15 @@ class _Backdrop extends StatelessWidget {
                   child: Row(
                     children: <Widget>[
                       const Icon(
-                        Icons.star_rounded,
+                        Symbols.star_rounded,
                         color: Color(0xFFFFC44D),
                         size: 17,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${movie.voteAverage.toStringAsFixed(1)} / 10',
+                        movie.voteAverage > 0
+                            ? '${movie.voteAverage.toStringAsFixed(1)} / 10'
+                            : 'Not rated',
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,

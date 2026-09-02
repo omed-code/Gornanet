@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class StatePanel extends StatelessWidget {
   const StatePanel({
@@ -56,7 +57,7 @@ class StatePanel extends StatelessWidget {
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: onAction,
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(Symbols.refresh),
                 label: Text(actionLabel!),
               ),
             ],

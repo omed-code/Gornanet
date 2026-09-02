@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../state/app_providers.dart';
 import 'search_screen.dart';
@@ -32,7 +33,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.only(top: 5),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -41,8 +42,8 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       child: Image.asset(
                         'assets/branding/spider_movie_icon.png',
                         key: const Key('app-bar-logo'),
-                        width: 24,
-                        height: 24,
+                        width: 22,
+                        height: 22,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -63,7 +64,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         title: Padding(
-          padding: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.only(top: 16),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -73,17 +74,23 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         actions: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(top: 20),
-            child: IconButton.filledTonal(
-              key: const Key('app-bar-search'),
-              tooltip: 'Search',
-              onPressed: () => setState(() => _index = 1),
-              icon: const Icon(Icons.manage_search_rounded),
+          if (_index != 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: IconButton.filledTonal(
+                key: const Key('app-bar-search'),
+                tooltip: 'Search',
+                style: IconButton.styleFrom(
+                  minimumSize: const Size.square(40),
+                  maximumSize: const Size.square(40),
+                  iconSize: 21,
+                ),
+                onPressed: () => setState(() => _index = 1),
+                icon: const Icon(Symbols.manage_search_rounded),
+              ),
             ),
-          ),
           const Padding(
-            padding: EdgeInsets.only(top: 20),
+            padding: EdgeInsets.only(top: 16),
             child: _ThemeModeMenu(),
           ),
           const SizedBox(width: 12),
@@ -129,22 +136,22 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                   children: <Widget>[
                     _BottomNavigationItem(
                       label: 'Trending',
-                      icon: Icons.local_fire_department_outlined,
-                      selectedIcon: Icons.local_fire_department_rounded,
+                      icon: Symbols.local_fire_department,
+                      selectedIcon: Symbols.local_fire_department_rounded,
                       selected: _index == 0,
                       onTap: () => setState(() => _index = 0),
                     ),
                     _BottomNavigationItem(
                       label: 'Search',
-                      icon: Icons.search_rounded,
-                      selectedIcon: Icons.manage_search_rounded,
+                      icon: Symbols.search_rounded,
+                      selectedIcon: Symbols.manage_search_rounded,
                       selected: _index == 1,
                       onTap: () => setState(() => _index = 1),
                     ),
                     _BottomNavigationItem(
                       label: 'Watchlist',
-                      icon: Icons.bookmark_border_rounded,
-                      selectedIcon: Icons.bookmark_rounded,
+                      icon: Symbols.bookmark_border_rounded,
+                      selectedIcon: Symbols.bookmark_rounded,
                       selected: _index == 2,
                       onTap: () => setState(() => _index = 2),
                     ),
@@ -244,6 +251,11 @@ class _ThemeModeMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(themeModeProvider).value ?? ThemeMode.system;
     final scheme = Theme.of(context).colorScheme;
+    final icon = switch (selected) {
+      ThemeMode.light => Symbols.light_mode,
+      ThemeMode.dark => Symbols.dark_mode,
+      ThemeMode.system => Symbols.brightness_auto,
+    };
     return Material(
       color: scheme.secondaryContainer,
       shape: const CircleBorder(),
@@ -255,7 +267,7 @@ class _ThemeModeMenu extends ConsumerWidget {
           padding: EdgeInsets.zero,
           iconSize: 22,
           iconColor: scheme.onSecondaryContainer,
-          icon: const Icon(Icons.palette_outlined),
+          icon: Icon(icon),
           initialValue: selected,
           onSelected: (mode) async {
             try {

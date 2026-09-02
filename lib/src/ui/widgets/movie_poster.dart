@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class MoviePoster extends StatelessWidget {
   const MoviePoster({required this.url, this.width, this.height, super.key});
@@ -14,7 +15,7 @@ class MoviePoster extends StatelessWidget {
       height: height,
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       alignment: Alignment.center,
-      child: const Icon(Icons.movie_outlined, size: 42),
+      child: const Icon(Symbols.movie, size: 42),
     );
     if (url == null) return placeholder;
     return Image.network(

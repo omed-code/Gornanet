@@ -69,7 +69,7 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         backgroundColor: isDark ? _darkBackground : _lightBackground,
         surfaceTintColor: Colors.transparent,
-        toolbarHeight: 88,
+        toolbarHeight: 82,
         titleSpacing: 20,
       ),
       cardTheme: CardThemeData(

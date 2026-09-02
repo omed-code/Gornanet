@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../core/tmdb_client.dart';
 import '../models/movie.dart';
@@ -25,9 +26,7 @@ class TrendingScreen extends ConsumerWidget {
             (error.type == AppErrorType.configuration ||
                 error.type == AppErrorType.unauthorized);
         return StatePanel(
-          icon: credentialError
-              ? Icons.key_off_outlined
-              : Icons.cloud_off_outlined,
+          icon: credentialError ? Symbols.key_off : Symbols.cloud_off,
           title: credentialError
               ? 'TMDB setup required'
               : 'Could not load trending movies',
@@ -41,7 +40,7 @@ class TrendingScreen extends ConsumerWidget {
       data: (data) {
         if (data.movies.isEmpty && data.series.isEmpty && data.anime.isEmpty) {
           return StatePanel(
-            icon: Icons.movie_filter_outlined,
+            icon: Symbols.movie_filter,
             title: 'Nothing to show',
             message: 'TMDB did not return any titles. Pull down to try again.',
             actionLabel: 'Refresh',
@@ -62,21 +61,21 @@ class TrendingScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Movies',
-                icon: Icons.theaters_rounded,
+                icon: Symbols.theaters_rounded,
                 movies: data.movies,
                 autoScrollInterval: const Duration(seconds: 6),
               ),
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Series',
-                icon: Icons.subscriptions_rounded,
+                icon: Symbols.subscriptions_rounded,
                 movies: data.series,
                 autoScrollInterval: const Duration(seconds: 7),
               ),
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Anime',
-                icon: Icons.auto_awesome_rounded,
+                icon: Symbols.auto_awesome_rounded,
                 movies: data.anime,
                 autoScrollInterval: const Duration(seconds: 8),
               ),
@@ -106,7 +105,7 @@ class _GenreSection extends StatelessWidget {
         Row(
           children: <Widget>[
             Icon(
-              Icons.widgets_rounded,
+              Symbols.widgets_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(width: 8),
@@ -119,6 +118,7 @@ class _GenreSection extends StatelessWidget {
           child: ListView.separated(
             key: const Key('genres-filter-list'),
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(right: 12),
             itemCount: BrowseGenre.values.length,
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
@@ -288,6 +288,7 @@ class _AutoScrollingMovieCarouselState
         key: widget.listKey,
         controller: _controller,
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.only(right: 12),
         physics: const BouncingScrollPhysics(),
         itemCount: widget.movies.length,
         separatorBuilder: (_, _) => const SizedBox(width: _spacing),

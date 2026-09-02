@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../state/app_providers.dart';
 import 'widgets/movie_card.dart';
@@ -14,7 +15,7 @@ class WatchlistScreen extends ConsumerWidget {
     return watchlist.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => StatePanel(
-        icon: Icons.error_outline,
+        icon: Symbols.error,
         title: 'Could not open watchlist',
         message: readableError(error),
         actionLabel: 'Try again',
@@ -23,7 +24,7 @@ class WatchlistScreen extends ConsumerWidget {
       data: (movies) {
         if (movies.isEmpty) {
           return const StatePanel(
-            icon: Icons.bookmark_add_outlined,
+            icon: Symbols.bookmark_add,
             title: 'Your watchlist is empty',
             message:
                 'Save movies from Trending, Search, or a detail page. They will remain here offline.',
@@ -79,7 +80,7 @@ class _WatchlistSummary extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.offline_pin_rounded,
+              Symbols.offline_pin_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
@@ -89,7 +90,7 @@ class _WatchlistSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  '$count ${count == 1 ? 'movie' : 'movies'} saved',
+                  '$count ${count == 1 ? 'title' : 'titles'} saved',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 2),

@@ -259,10 +259,7 @@ void main() {
 
     expect(find.text('Find a title'), findsOneWidget);
     expect(find.byKey(const Key('search-category-selector')), findsOneWidget);
-    expect(
-      find.text('Search movies, series, and anime from one place'),
-      findsOneWidget,
-    );
+    expect(find.text('DISCOVER'), findsOneWidget);
     final field = tester.widget<TextField>(
       find.byKey(const Key('movie-search-field')),
     );
@@ -584,8 +581,8 @@ void main() {
     expect(find.text('Released year'), findsOneWidget);
     expect(find.textContaining('Rating ·'), findsOneWidget);
     expect(find.text('Genres'), findsOneWidget);
-    expect(find.text('Quality'), findsOneWidget);
-    expect(find.text('Age rating'), findsOneWidget);
+    expect(find.text('Artwork availability'), findsOneWidget);
+    expect(find.text('Content audience'), findsOneWidget);
     expect(find.byKey(const Key('apply-search-filters')), findsOneWidget);
   });
 

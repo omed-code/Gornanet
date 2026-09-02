@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../state/app_providers.dart';
 
@@ -115,12 +116,12 @@ class _CredentialDialogState extends ConsumerState<_CredentialDialog> {
               decoration: InputDecoration(
                 labelText: 'TMDB credential',
                 errorText: _errorText,
-                prefixIcon: const Icon(Icons.key),
+                prefixIcon: const Icon(Symbols.key),
                 suffixIcon: IconButton(
                   tooltip: _obscureText ? 'Show credential' : 'Hide credential',
                   onPressed: () => setState(() => _obscureText = !_obscureText),
                   icon: Icon(
-                    _obscureText ? Icons.visibility : Icons.visibility_off,
+                    _obscureText ? Symbols.visibility : Symbols.visibility_off,
                   ),
                 ),
               ),

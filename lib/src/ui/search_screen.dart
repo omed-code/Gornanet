@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../core/tmdb_client.dart';
 import '../repositories/movie_repository.dart';
@@ -214,7 +215,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildDiscoveryPanel(BuildContext context, SearchState search) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: scheme.surface,
         borderRadius: BorderRadius.circular(24),
@@ -231,10 +232,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
             child: Row(
               children: <Widget>[
-                Icon(Icons.explore_rounded, size: 18, color: scheme.primary),
+                Icon(Symbols.explore_rounded, size: 18, color: scheme.primary),
                 const SizedBox(width: 7),
                 Text(
                   'DISCOVER',
@@ -272,7 +273,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               hintText: _animatedHint.isEmpty
                   ? _defaultHint(search.category)
                   : 'Try “$_animatedHint”',
-              prefixIcon: Icon(Icons.search_rounded, color: scheme.secondary),
+              prefixIcon: Icon(Symbols.search_rounded, color: scheme.secondary),
               suffixIconConstraints: const BoxConstraints(minWidth: 52),
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -287,7 +288,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ref.read(searchProvider.notifier).search('');
                         setState(() {});
                       },
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(Symbols.close_rounded),
                     ),
                   IconButton.filledTonal(
                     key: const Key('search-filter-button'),
@@ -296,7 +297,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     icon: Badge(
                       isLabelVisible: search.filters.activeCount > 0,
                       label: Text('${search.filters.activeCount}'),
-                      child: const Icon(Icons.tune_rounded),
+                      child: const Icon(Symbols.tune_rounded),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -304,15 +305,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              'Search movies, series, and anime from one place',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-            ),
-          ),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: SegmentedButton<SearchCategory>(
@@ -321,17 +314,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ButtonSegment(
                   value: SearchCategory.movies,
                   label: Text('Movies'),
-                  icon: Icon(Icons.theaters_rounded),
+                  icon: Icon(Symbols.theaters_rounded),
                 ),
                 ButtonSegment(
                   value: SearchCategory.series,
                   label: Text('Series'),
-                  icon: Icon(Icons.subscriptions_rounded),
+                  icon: Icon(Symbols.subscriptions_rounded),
                 ),
                 ButtonSegment(
                   value: SearchCategory.anime,
                   label: Text('Anime'),
-                  icon: Icon(Icons.auto_awesome_rounded),
+                  icon: Icon(Symbols.auto_awesome_rounded),
                 ),
               ],
               selected: <SearchCategory>{search.category},
@@ -407,7 +400,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                     ),
                     Icon(
-                      Icons.arrow_forward_rounded,
+                      Symbols.arrow_forward_rounded,
                       color: scheme.onSecondaryContainer,
                     ),
                   ],
@@ -424,7 +417,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final results = search.visibleResults;
     if (results == null) {
       return StatePanel(
-        icon: Icons.manage_search,
+        icon: Symbols.manage_search,
         title: 'Find your next ${_categoryName(search.category)}',
         message: 'Search by an original, translated, or alternative title.',
       );
@@ -437,9 +430,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             (error.type == AppErrorType.configuration ||
                 error.type == AppErrorType.unauthorized);
         return StatePanel(
-          icon: credentialError
-              ? Icons.key_off_outlined
-              : Icons.wifi_off_outlined,
+          icon: credentialError ? Symbols.key_off : Symbols.wifi_off,
           title: credentialError ? 'TMDB setup required' : 'Search failed',
           message: readableError(error),
           actionLabel: credentialError ? 'Add credential' : 'Try again',
@@ -452,10 +443,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         if (data.movies.isEmpty) {
           final hasFilters = search.filters.activeCount > 0;
           return StatePanel(
-            icon: Icons.search_off,
+            icon: Symbols.search_off,
             title: 'No matches',
             message: hasFilters
-                ? 'No titles in the loaded results match these filters.'
+                ? 'No titles match the selected filters.'
                 : search.query.isEmpty
                 ? 'No ${_categoryName(search.category, plural: true)} are available right now.'
                 : 'No ${_categoryName(search.category, plural: true)} matched “${search.query}”. Try another title.',
@@ -603,7 +594,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                   minimumSize: const Size.fromHeight(56),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                 ),
-                icon: const Icon(Icons.calendar_month_outlined),
+                icon: const Icon(Symbols.calendar_month),
                 label: Row(
                   children: <Widget>[
                     Expanded(
@@ -612,7 +603,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                     ),
-                    const Icon(Icons.expand_more_rounded),
+                    const Icon(Symbols.expand_more_rounded),
                   ],
                 ),
               ),
@@ -666,7 +657,10 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                   .toList(growable: false),
             ),
             const SizedBox(height: 20),
-            Text('Quality', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Artwork availability',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             SegmentedButton<SearchArtworkQuality>(
               key: const Key('quality-filter'),
@@ -677,7 +671,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ),
                 ButtonSegment(
                   value: SearchArtworkQuality.poster,
-                  label: Text('Poster'),
+                  label: Text('Has poster'),
                 ),
                 ButtonSegment(
                   value: SearchArtworkQuality.backdrop,
@@ -690,7 +684,10 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                   setState(() => _quality = value.first),
             ),
             const SizedBox(height: 20),
-            Text('Age rating', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Content audience',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             SegmentedButton<SearchAgeRating>(
               key: const Key('age-rating-filter'),
@@ -698,11 +695,11 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
                 ButtonSegment(value: SearchAgeRating.any, label: Text('Any')),
                 ButtonSegment(
                   value: SearchAgeRating.allAges,
-                  label: Text('All ages'),
+                  label: Text('General'),
                 ),
                 ButtonSegment(
                   value: SearchAgeRating.adultsOnly,
-                  label: Text('18+'),
+                  label: Text('Adult'),
                 ),
               ],
               selected: <SearchAgeRating>{_ageRating},
@@ -716,7 +713,7 @@ class _SearchFilterSheetState extends State<_SearchFilterSheet> {
               child: FilledButton.icon(
                 key: const Key('apply-search-filters'),
                 onPressed: () => Navigator.pop(context, _filters),
-                icon: const Icon(Icons.tune_rounded),
+                icon: const Icon(Symbols.tune_rounded),
                 label: Text(
                   _filters.activeCount == 0
                       ? 'Show all titles'
