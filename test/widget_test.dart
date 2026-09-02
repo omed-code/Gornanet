@@ -243,7 +243,7 @@ void main() {
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
     expect(find.byKey(const Key('home-sections-list')), findsOneWidget);
-    final moviesCarousel = tester.widget<ListView>(
+    final moviesCarousel = tester.widget<PageView>(
       find.byKey(const Key('movies-horizontal-list')),
     );
     expect(moviesCarousel.scrollDirection, Axis.horizontal);
@@ -547,7 +547,7 @@ void main() {
 
     expect(repository.browsedGenres, contains(BrowseGenre.comedy));
     expect(find.text('Comedy pick'), findsOneWidget);
-    final carousel = tester.widget<ListView>(
+    final carousel = tester.widget<PageView>(
       find.byKey(const Key('genre-picks-horizontal-list')),
     );
     expect(carousel.scrollDirection, Axis.horizontal);
@@ -557,7 +557,7 @@ void main() {
     tester,
   ) async {
     await pumpMovieApp(tester, movies: FakeMovieRepository(paginated: true));
-    final carousel = tester.widget<ListView>(
+    final carousel = tester.widget<PageView>(
       find.byKey(const Key('movies-horizontal-list')),
     );
     expect(carousel.controller?.offset, 0);
@@ -568,6 +568,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
 
     expect(carousel.controller?.offset, greaterThan(0));
+  });
+
+  testWidgets('home sections expose a working see all action', (tester) async {
+    await pumpMovieApp(tester);
+
+    await tester.tap(find.text('See all').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('all-titles-list')), findsOneWidget);
+    expect(find.text('Action titles'), findsOneWidget);
   });
 
   testWidgets('search filter button opens all filter controls', (tester) async {

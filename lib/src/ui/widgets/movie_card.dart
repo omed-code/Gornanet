@@ -30,7 +30,7 @@ class MovieCard extends ConsumerWidget {
               color: Colors.black.withValues(
                 alpha: Theme.of(context).brightness == Brightness.dark
                     ? .18
-                    : .055,
+                    : .075,
               ),
               blurRadius: 22,
               offset: const Offset(0, 8),
@@ -152,7 +152,7 @@ class MovieCard extends ConsumerWidget {
                               movie.overview.isEmpty
                                   ? 'No overview is available.'
                                   : movie.overview,
-                              maxLines: 3,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
@@ -234,11 +234,16 @@ class _WatchlistButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return IconButton.filledTonal(
       tooltip: saved ? 'Remove from watchlist' : 'Add to watchlist',
       onPressed: onPressed,
       visualDensity: VisualDensity.compact,
       iconSize: 20,
+      style: IconButton.styleFrom(
+        backgroundColor: saved ? scheme.primary : scheme.secondaryContainer,
+        foregroundColor: saved ? scheme.onPrimary : scheme.onSecondaryContainer,
+      ),
       icon: AnimatedSwitcher(
         duration: const Duration(milliseconds: 180),
         child: Icon(

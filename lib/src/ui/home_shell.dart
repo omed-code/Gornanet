@@ -64,7 +64,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         title: Padding(
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(top: 22),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -76,7 +76,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         actions: <Widget>[
           if (_index != 1)
             Padding(
-              padding: const EdgeInsets.only(top: 16),
+              padding: const EdgeInsets.only(top: 22),
               child: IconButton.filledTonal(
                 key: const Key('app-bar-search'),
                 tooltip: 'Search',
@@ -90,7 +90,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               ),
             ),
           const Padding(
-            padding: EdgeInsets.only(top: 16),
+            padding: EdgeInsets.only(top: 22),
             child: _ThemeModeMenu(),
           ),
           const SizedBox(width: 12),

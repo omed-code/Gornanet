@@ -63,12 +63,19 @@ class _WatchlistSummary extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: <Color>[
-            Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.secondaryContainer,
-          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: const <Color>[Color(0xFF741B2D), Color(0xFF1D438A)],
         ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: .16)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: const Color(0xFF2855C7).withValues(alpha: .16),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: <Widget>[
@@ -76,12 +83,12 @@ class _WatchlistSummary extends StatelessWidget {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: Colors.white.withValues(alpha: .94),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Symbols.offline_pin_rounded,
-              color: Theme.of(context).colorScheme.primary,
+              color: Color(0xFFC62828),
             ),
           ),
           const SizedBox(width: 14),
@@ -91,13 +98,16 @@ class _WatchlistSummary extends StatelessWidget {
               children: <Widget>[
                 Text(
                   '$count ${count == 1 ? 'title' : 'titles'} saved',
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Available even when you are offline',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: Colors.white.withValues(alpha: .82),
                   ),
                 ),
               ],

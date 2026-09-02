@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
   static const _crimson = Color(0xFFB7183B);
-  static const _cobalt = Color(0xFF2855C7);
+  static const _brandRed = Color(0xFFC62828);
   static const _darkBackground = Color(0xFF080B12);
-  static const _lightBackground = Color(0xFFF7F8FC);
+  static const _lightBackground = Color(0xFFFFFFFF);
 
   static ThemeData get light => _theme(Brightness.light);
   static ThemeData get dark => _theme(Brightness.dark);
@@ -13,36 +13,40 @@ abstract final class AppTheme {
     final isDark = brightness == Brightness.dark;
     final scheme =
         ColorScheme.fromSeed(
-          seedColor: _crimson,
+          seedColor: isDark ? _crimson : _brandRed,
           brightness: brightness,
         ).copyWith(
-          primary: isDark ? const Color(0xFFFF607B) : _crimson,
+          primary: isDark ? const Color(0xFFFF607B) : _brandRed,
           onPrimary: Colors.white,
           primaryContainer: isDark
               ? const Color(0xFF5B1728)
-              : const Color(0xFFF8D9DF),
+              : const Color(0xFFDCE6FF),
           onPrimaryContainer: isDark
               ? const Color(0xFFFFD9E0)
-              : const Color(0xFF5A1023),
-          secondary: isDark ? const Color(0xFF7CA7FF) : _cobalt,
+              : const Color(0xFF5C1515),
+          secondary: isDark ? const Color(0xFF7CA7FF) : const Color(0xFF2855C7),
+          onSecondary: Colors.white,
           secondaryContainer: isDark
               ? const Color(0xFF183466)
               : const Color(0xFFDCE6FF),
+          onSecondaryContainer: isDark
+              ? const Color(0xFFD9E5FF)
+              : const Color(0xFF17356E),
           surface: isDark ? const Color(0xFF111722) : Colors.white,
           onSurface: isDark ? const Color(0xFFF3F5FA) : const Color(0xFF171A22),
           onSurfaceVariant: isDark
               ? const Color(0xFFB7C0D0)
-              : const Color(0xFF555D6D),
+              : const Color(0xFF4F5C70),
           surfaceContainer: isDark
               ? const Color(0xFF182130)
-              : const Color(0xFFEEF1F6),
+              : const Color(0xFFE4EBF5),
           surfaceContainerHighest: isDark
               ? const Color(0xFF243044)
-              : const Color(0xFFE3E8F0),
+              : const Color(0xFFD7E1F0),
           outline: isDark ? const Color(0xFF76839A) : const Color(0xFF747D8E),
           outlineVariant: isDark
               ? const Color(0xFF2B394F)
-              : const Color(0xFFD8DEE8),
+              : const Color(0xFFCED8E6),
         );
     final baseText = ThemeData(brightness: brightness).textTheme;
     return ThemeData(
@@ -69,7 +73,7 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         backgroundColor: isDark ? _darkBackground : _lightBackground,
         surfaceTintColor: Colors.transparent,
-        toolbarHeight: 82,
+        toolbarHeight: 84,
         titleSpacing: 20,
       ),
       cardTheme: CardThemeData(
