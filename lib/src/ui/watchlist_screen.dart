@@ -23,12 +23,7 @@ class WatchlistScreen extends ConsumerWidget {
       ),
       data: (movies) {
         if (movies.isEmpty) {
-          return const StatePanel(
-            icon: Symbols.bookmark_add,
-            title: 'Your watchlist is empty',
-            message:
-                'Save movies from Trending, Search, or a detail page. They will remain here offline.',
-          );
+          return const _EmptyWatchlist();
         }
         return ListView.builder(
           key: const Key('watchlist-list'),
@@ -48,6 +43,90 @@ class WatchlistScreen extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+}
+
+class _EmptyWatchlist extends ConsumerWidget {
+  const _EmptyWatchlist();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recommendations = ref.watch(homeFeedProvider);
+    final movies = recommendations.value?.movies.take(3).toList() ?? const [];
+    final scheme = Theme.of(context).colorScheme;
+
+    return ListView(
+      key: const Key('empty-watchlist-recommendations'),
+      padding: const EdgeInsets.fromLTRB(20, 42, 20, 32),
+      children: <Widget>[
+        Center(
+          child: Container(
+            width: 82,
+            height: 82,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Symbols.bookmark_add,
+              size: 40,
+              color: scheme.onPrimaryContainer,
+            ),
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(
+          'Your watchlist is empty',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Save movies from Trending, Search, or a detail page. '
+          'They will remain here offline.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 36),
+        Row(
+          children: <Widget>[
+            Icon(Symbols.auto_awesome_rounded, color: scheme.primary),
+            const SizedBox(width: 9),
+            Text(
+              'Recommended for you',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        if (recommendations.isLoading && movies.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 28),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (movies.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Text(
+              'Recommendations are unavailable right now.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: scheme.onSurfaceVariant),
+            ),
+          )
+        else
+          for (var index = 0; index < movies.length; index++) ...<Widget>[
+            MovieCard(movie: movies[index]),
+            if (index != movies.length - 1) const SizedBox(height: 14),
+          ],
+      ],
     );
   }
 }

@@ -257,7 +257,7 @@ class _ThemeModeMenu extends ConsumerWidget {
       ThemeMode.system => Symbols.brightness_auto,
     };
     return Material(
-      color: scheme.secondaryContainer,
+      color: scheme.primary,
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: SizedBox.square(
@@ -266,7 +266,7 @@ class _ThemeModeMenu extends ConsumerWidget {
           tooltip: 'Choose theme',
           padding: EdgeInsets.zero,
           iconSize: 22,
-          iconColor: scheme.onSecondaryContainer,
+          iconColor: scheme.onPrimary,
           icon: Icon(icon),
           initialValue: selected,
           onSelected: (mode) async {
