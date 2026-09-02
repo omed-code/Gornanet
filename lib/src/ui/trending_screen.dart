@@ -167,12 +167,16 @@ class _GenreSection extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 3),
                     labelPadding: const EdgeInsets.symmetric(horizontal: 3),
                     backgroundColor: scheme.surfaceContainer,
-                    selectedColor: scheme.primaryContainer,
-                    checkmarkColor: scheme.onPrimaryContainer,
-                    labelStyle: TextStyle(
+                    selectedColor: scheme.primary,
+                    checkmarkColor: scheme.onPrimary,
+                    side: BorderSide(
                       color: selected
-                          ? scheme.onPrimaryContainer
-                          : scheme.onSurface,
+                          ? scheme.primary
+                          : scheme.outlineVariant.withValues(alpha: .8),
+                    ),
+                    shape: const StadiumBorder(),
+                    labelStyle: TextStyle(
+                      color: selected ? scheme.onPrimary : scheme.onSurface,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                       fontSize: 13,
                     ),
