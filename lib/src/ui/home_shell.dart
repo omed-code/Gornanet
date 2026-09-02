@@ -72,13 +72,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         actions: <Widget>[
-          IconButton(
-            key: const Key('app-bar-search'),
-            tooltip: 'Search',
-            onPressed: () => setState(() => _index = 1),
-            icon: const Icon(Icons.search_rounded),
+          Padding(
+            padding: const EdgeInsets.only(top: 15),
+            child: IconButton(
+              key: const Key('app-bar-search'),
+              tooltip: 'Search',
+              onPressed: () => setState(() => _index = 1),
+              icon: const Icon(Icons.search_rounded),
+            ),
           ),
-          const _ThemeModeMenu(),
+          const Padding(
+            padding: EdgeInsets.only(top: 15),
+            child: _ThemeModeMenu(),
+          ),
           const SizedBox(width: 12),
         ],
       ),
