@@ -6,6 +6,7 @@ import '../state/app_providers.dart';
 import 'search_screen.dart';
 import 'trending_screen.dart';
 import 'watchlist_screen.dart';
+import 'widgets/spider_web_background.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -25,137 +26,141 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: false,
-        flexibleSpace: SafeArea(
-          child: IgnorePointer(
+    return SpiderWebBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          centerTitle: false,
+          flexibleSpace: SafeArea(
+            child: IgnorePointer(
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 5),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: Image.asset(
+                          'assets/branding/spider_movie_icon.png',
+                          key: const Key('app-bar-logo'),
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Text(
+                        'SPIDER MOVIE',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 2.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          title: Padding(
+            padding: const EdgeInsets.only(top: 22),
             child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 5),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: Image.asset(
-                        'assets/branding/spider_movie_icon.png',
-                        key: const Key('app-bar-logo'),
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                    const SizedBox(width: 9),
-                    Text(
-                      'SPIDER MOVIE',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                        letterSpacing: 2.3,
-                      ),
-                    ),
-                  ],
-                ),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                _titles[_index],
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
           ),
-        ),
-        title: Padding(
-          padding: const EdgeInsets.only(top: 22),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              _titles[_index],
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-          ),
-        ),
-        actions: <Widget>[
-          if (_index != 1)
-            Padding(
-              padding: const EdgeInsets.only(top: 22),
-              child: IconButton.filledTonal(
-                key: const Key('app-bar-search'),
-                tooltip: 'Search',
-                style: IconButton.styleFrom(
-                  minimumSize: const Size.square(40),
-                  maximumSize: const Size.square(40),
-                  iconSize: 21,
+          actions: <Widget>[
+            if (_index != 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 22),
+                child: IconButton.filledTonal(
+                  key: const Key('app-bar-search'),
+                  tooltip: 'Search',
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size.square(40),
+                    maximumSize: const Size.square(40),
+                    iconSize: 21,
+                  ),
+                  onPressed: () => setState(() => _index = 1),
+                  icon: const Icon(Symbols.manage_search_rounded),
                 ),
-                onPressed: () => setState(() => _index = 1),
-                icon: const Icon(Symbols.manage_search_rounded),
               ),
+            const Padding(
+              padding: EdgeInsets.only(top: 22),
+              child: _ThemeModeMenu(),
             ),
-          const Padding(
-            padding: EdgeInsets.only(top: 22),
-            child: _ThemeModeMenu(),
-          ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: IndexedStack(
-          index: _index,
-          children: <Widget>[
-            const TrendingScreen(),
-            SearchScreen(isActive: _index == 1),
-            const WatchlistScreen(),
+            const SizedBox(width: 12),
           ],
         ),
-      ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        minimum: const EdgeInsets.only(bottom: 6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Material(
-            key: const Key('modern-bottom-navigation'),
-            elevation: 6,
-            shadowColor: Theme.of(
-              context,
-            ).colorScheme.shadow.withValues(alpha: .12),
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(32),
-              side: BorderSide(
-                color: Theme.of(
-                  context,
-                ).colorScheme.outlineVariant.withValues(alpha: .75),
+        body: SafeArea(
+          top: false,
+          child: IndexedStack(
+            index: _index,
+            children: <Widget>[
+              const TrendingScreen(),
+              SearchScreen(isActive: _index == 1),
+              const WatchlistScreen(),
+            ],
+          ),
+        ),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.only(bottom: 6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Material(
+              key: const Key('modern-bottom-navigation'),
+              elevation: 6,
+              shadowColor: Theme.of(
+                context,
+              ).colorScheme.shadow.withValues(alpha: .12),
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(32),
+                side: BorderSide(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.outlineVariant.withValues(alpha: .75),
+                ),
               ),
-            ),
-            child: SizedBox(
-              height: 64,
-              child: Padding(
-                padding: const EdgeInsets.all(5),
-                child: Row(
-                  children: <Widget>[
-                    _BottomNavigationItem(
-                      label: 'Trending',
-                      icon: Symbols.local_fire_department,
-                      selectedIcon: Symbols.local_fire_department_rounded,
-                      selected: _index == 0,
-                      onTap: () => setState(() => _index = 0),
-                    ),
-                    _BottomNavigationItem(
-                      label: 'Search',
-                      icon: Symbols.search_rounded,
-                      selectedIcon: Symbols.manage_search_rounded,
-                      selected: _index == 1,
-                      onTap: () => setState(() => _index = 1),
-                    ),
-                    _BottomNavigationItem(
-                      label: 'Watchlist',
-                      icon: Symbols.bookmark_border_rounded,
-                      selectedIcon: Symbols.bookmark_rounded,
-                      selected: _index == 2,
-                      onTap: () => setState(() => _index = 2),
-                    ),
-                  ],
+              child: SizedBox(
+                height: 64,
+                child: Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: Row(
+                    children: <Widget>[
+                      _BottomNavigationItem(
+                        label: 'Trending',
+                        icon: Symbols.local_fire_department,
+                        selectedIcon: Symbols.local_fire_department_rounded,
+                        selected: _index == 0,
+                        onTap: () => setState(() => _index = 0),
+                      ),
+                      _BottomNavigationItem(
+                        label: 'Search',
+                        icon: Symbols.search_rounded,
+                        selectedIcon: Symbols.manage_search_rounded,
+                        selected: _index == 1,
+                        onTap: () => setState(() => _index = 1),
+                      ),
+                      _BottomNavigationItem(
+                        label: 'Watchlist',
+                        icon: Symbols.bookmark_border_rounded,
+                        selectedIcon: Symbols.bookmark_rounded,
+                        selected: _index == 2,
+                        onTap: () => setState(() => _index = 2),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
