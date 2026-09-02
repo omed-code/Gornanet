@@ -32,7 +32,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.only(top: 5),
+                padding: const EdgeInsets.only(top: 6),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -41,18 +41,19 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                       child: Image.asset(
                         'assets/branding/spider_movie_icon.png',
                         key: const Key('app-bar-logo'),
-                        width: 20,
-                        height: 20,
+                        width: 24,
+                        height: 24,
                         fit: BoxFit.cover,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 9),
                     Text(
                       'SPIDER MOVIE',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 2.2,
+                        fontSize: 12,
+                        letterSpacing: 2.3,
                       ),
                     ),
                   ],
@@ -62,7 +63,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ),
         ),
         title: Padding(
-          padding: const EdgeInsets.only(top: 15),
+          padding: const EdgeInsets.only(top: 20),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -73,16 +74,16 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         ),
         actions: <Widget>[
           Padding(
-            padding: const EdgeInsets.only(top: 15),
-            child: IconButton(
+            padding: const EdgeInsets.only(top: 20),
+            child: IconButton.filledTonal(
               key: const Key('app-bar-search'),
               tooltip: 'Search',
               onPressed: () => setState(() => _index = 1),
-              icon: const Icon(Icons.search_rounded),
+              icon: const Icon(Icons.manage_search_rounded),
             ),
           ),
           const Padding(
-            padding: EdgeInsets.only(top: 15),
+            padding: EdgeInsets.only(top: 20),
             child: _ThemeModeMenu(),
           ),
           const SizedBox(width: 12),
@@ -242,26 +243,40 @@ class _ThemeModeMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selected = ref.watch(themeModeProvider).value ?? ThemeMode.system;
-    return PopupMenuButton<ThemeMode>(
-      tooltip: 'Choose theme',
-      icon: const Icon(Icons.contrast_rounded),
-      initialValue: selected,
-      onSelected: (mode) async {
-        try {
-          await ref.read(themeModeProvider.notifier).setMode(mode);
-        } catch (_) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Could not save theme preference.')),
-            );
-          }
-        }
-      },
-      itemBuilder: (context) => const <PopupMenuEntry<ThemeMode>>[
-        PopupMenuItem(value: ThemeMode.system, child: Text('System theme')),
-        PopupMenuItem(value: ThemeMode.light, child: Text('Light theme')),
-        PopupMenuItem(value: ThemeMode.dark, child: Text('Dark theme')),
-      ],
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.secondaryContainer,
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox.square(
+        dimension: 40,
+        child: PopupMenuButton<ThemeMode>(
+          tooltip: 'Choose theme',
+          padding: EdgeInsets.zero,
+          iconSize: 22,
+          iconColor: scheme.onSecondaryContainer,
+          icon: const Icon(Icons.palette_outlined),
+          initialValue: selected,
+          onSelected: (mode) async {
+            try {
+              await ref.read(themeModeProvider.notifier).setMode(mode);
+            } catch (_) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Could not save theme preference.'),
+                  ),
+                );
+              }
+            }
+          },
+          itemBuilder: (context) => const <PopupMenuEntry<ThemeMode>>[
+            PopupMenuItem(value: ThemeMode.system, child: Text('System theme')),
+            PopupMenuItem(value: ThemeMode.light, child: Text('Light theme')),
+            PopupMenuItem(value: ThemeMode.dark, child: Text('Dark theme')),
+          ],
+        ),
+      ),
     );
   }
 }

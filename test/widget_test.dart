@@ -575,7 +575,7 @@ void main() {
 
   testWidgets('search filter button opens all filter controls', (tester) async {
     await pumpMovieApp(tester);
-    await tester.tap(find.byIcon(Icons.search_rounded).first);
+    await tester.tap(find.byKey(const Key('app-bar-search')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('search-filter-button')));
