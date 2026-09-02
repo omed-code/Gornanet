@@ -180,9 +180,7 @@ class _BottomNavigationItem extends StatelessWidget {
           duration: const Duration(milliseconds: 320),
           curve: Curves.easeInOutCubic,
           decoration: BoxDecoration(
-            color: selected
-                ? scheme.surfaceContainerHighest
-                : Colors.transparent,
+            color: selected ? scheme.primaryContainer : Colors.transparent,
             borderRadius: BorderRadius.circular(27),
           ),
           child: Material(
@@ -204,7 +202,7 @@ class _BottomNavigationItem extends StatelessWidget {
                         key: ValueKey<bool>(selected),
                         size: 22,
                         color: selected
-                            ? scheme.onSurface
+                            ? scheme.onPrimaryContainer
                             : scheme.onSurfaceVariant,
                       ),
                     ),
@@ -214,7 +212,7 @@ class _BottomNavigationItem extends StatelessWidget {
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: selected
-                            ? scheme.onSurface
+                            ? scheme.onPrimaryContainer
                             : scheme.onSurfaceVariant,
                         fontWeight: selected
                             ? FontWeight.w800

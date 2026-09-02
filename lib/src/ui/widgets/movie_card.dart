@@ -113,22 +113,25 @@ class MovieCard extends ConsumerWidget {
                                 decoration: BoxDecoration(
                                   color: Theme.of(
                                     context,
-                                  ).colorScheme.surfaceContainer,
+                                  ).colorScheme.secondaryContainer,
                                   borderRadius: BorderRadius.circular(99),
                                 ),
                                 child: Text(
                                   movie.releaseYear,
                                   style: Theme.of(context).textTheme.labelMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                      ?.copyWith(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondaryContainer,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Icon(
                                 Icons.arrow_outward_rounded,
                                 size: 15,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                               const SizedBox(width: 4),
                               Text(

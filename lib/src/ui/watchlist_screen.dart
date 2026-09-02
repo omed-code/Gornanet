@@ -64,7 +64,7 @@ class _WatchlistSummary extends StatelessWidget {
         gradient: LinearGradient(
           colors: <Color>[
             Theme.of(context).colorScheme.primaryContainer,
-            Theme.of(context).colorScheme.surfaceContainer,
+            Theme.of(context).colorScheme.secondaryContainer,
           ],
         ),
         borderRadius: BorderRadius.circular(20),

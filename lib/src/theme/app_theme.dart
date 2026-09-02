@@ -1,28 +1,48 @@
 import 'package:flutter/material.dart';
 
 abstract final class AppTheme {
-  static const _red = Color(0xFFC62F45);
-  static const _darkBackground = Color(0xFF09090B);
-  static const _lightBackground = Color(0xFFF6F4F3);
+  static const _crimson = Color(0xFFB7183B);
+  static const _cobalt = Color(0xFF2855C7);
+  static const _darkBackground = Color(0xFF080B12);
+  static const _lightBackground = Color(0xFFF7F8FC);
 
   static ThemeData get light => _theme(Brightness.light);
   static ThemeData get dark => _theme(Brightness.dark);
 
   static ThemeData _theme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(seedColor: _red, brightness: brightness)
-        .copyWith(
-          primary: isDark ? const Color(0xFFFF6B7C) : _red,
-          surface: isDark ? const Color(0xFF151518) : Colors.white,
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: _crimson,
+          brightness: brightness,
+        ).copyWith(
+          primary: isDark ? const Color(0xFFFF607B) : _crimson,
+          onPrimary: Colors.white,
+          primaryContainer: isDark
+              ? const Color(0xFF5B1728)
+              : const Color(0xFFF8D9DF),
+          onPrimaryContainer: isDark
+              ? const Color(0xFFFFD9E0)
+              : const Color(0xFF5A1023),
+          secondary: isDark ? const Color(0xFF7CA7FF) : _cobalt,
+          secondaryContainer: isDark
+              ? const Color(0xFF183466)
+              : const Color(0xFFDCE6FF),
+          surface: isDark ? const Color(0xFF111722) : Colors.white,
+          onSurface: isDark ? const Color(0xFFF3F5FA) : const Color(0xFF171A22),
+          onSurfaceVariant: isDark
+              ? const Color(0xFFB7C0D0)
+              : const Color(0xFF555D6D),
           surfaceContainer: isDark
-              ? const Color(0xFF1C1C20)
-              : const Color(0xFFEEEAE8),
+              ? const Color(0xFF182130)
+              : const Color(0xFFEEF1F6),
           surfaceContainerHighest: isDark
-              ? const Color(0xFF29292E)
-              : const Color(0xFFE7E2DF),
+              ? const Color(0xFF243044)
+              : const Color(0xFFE3E8F0),
+          outline: isDark ? const Color(0xFF76839A) : const Color(0xFF747D8E),
           outlineVariant: isDark
-              ? const Color(0xFF303036)
-              : const Color(0xFFE5DFDC),
+              ? const Color(0xFF2B394F)
+              : const Color(0xFFD8DEE8),
         );
     final baseText = ThemeData(brightness: brightness).textTheme;
     return ThemeData(
@@ -60,6 +80,28 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
           side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .8)),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: scheme.surface,
+        modalBackgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        dragHandleColor: scheme.primary,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: scheme.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: scheme.outlineVariant),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -134,6 +176,11 @@ abstract final class AppTheme {
         ),
       ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: scheme.primary,
+        linearTrackColor: scheme.primaryContainer,
+        circularTrackColor: scheme.surfaceContainerHighest,
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
