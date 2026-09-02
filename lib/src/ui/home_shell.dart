@@ -15,14 +15,45 @@ class HomeShell extends ConsumerStatefulWidget {
   ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends ConsumerState<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell>
+    with SingleTickerProviderStateMixin {
   int _index = 0;
+  late final AnimationController _tabTransitionController;
+  late final Animation<double> _tabOpacity;
 
   static const _titles = <String>[
     'Trending today',
     'Find a title',
     'Watchlist',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabTransitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      value: 1,
+    );
+    _tabOpacity = Tween<double>(begin: .92, end: 1).animate(
+      CurvedAnimation(
+        parent: _tabTransitionController,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+  }
+
+  void _selectTab(int index) {
+    if (_index == index) return;
+    setState(() => _index = index);
+    _tabTransitionController.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _tabTransitionController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +120,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                     maximumSize: const Size.square(40),
                     iconSize: 21,
                   ),
-                  onPressed: () => setState(() => _index = 1),
+                  onPressed: () => _selectTab(1),
                   icon: const Icon(Symbols.manage_search_rounded),
                 ),
               ),
@@ -102,34 +133,39 @@ class _HomeShellState extends ConsumerState<HomeShell> {
         ),
         body: SafeArea(
           top: false,
-          child: IndexedStack(
-            index: _index,
-            children: <Widget>[
-              const TrendingScreen(),
-              SearchScreen(isActive: _index == 1),
-              const WatchlistScreen(),
-            ],
+          child: FadeTransition(
+            opacity: _tabOpacity,
+            child: IndexedStack(
+              index: _index,
+              children: <Widget>[
+                const TrendingScreen(),
+                SearchScreen(isActive: _index == 1),
+                const WatchlistScreen(),
+              ],
+            ),
           ),
         ),
         bottomNavigationBar: SafeArea(
           top: false,
           minimum: const EdgeInsets.only(bottom: 6),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: Material(
               key: const Key('modern-bottom-navigation'),
-              elevation: 6,
+              elevation: 3,
               shadowColor: Theme.of(
                 context,
-              ).colorScheme.shadow.withValues(alpha: .12),
-              color: Theme.of(context).colorScheme.surfaceContainer,
+              ).colorScheme.shadow.withValues(alpha: .10),
+              color: Theme.of(
+                context,
+              ).colorScheme.surfaceContainer.withValues(alpha: .96),
               clipBehavior: Clip.antiAlias,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(32),
+                borderRadius: BorderRadius.circular(30),
                 side: BorderSide(
                   color: Theme.of(
                     context,
-                  ).colorScheme.outlineVariant.withValues(alpha: .75),
+                  ).colorScheme.outlineVariant.withValues(alpha: .55),
                 ),
               ),
               child: SizedBox(
@@ -143,21 +179,21 @@ class _HomeShellState extends ConsumerState<HomeShell> {
                         icon: Symbols.local_fire_department,
                         selectedIcon: Symbols.local_fire_department_rounded,
                         selected: _index == 0,
-                        onTap: () => setState(() => _index = 0),
+                        onTap: () => _selectTab(0),
                       ),
                       _BottomNavigationItem(
                         label: 'Search',
                         icon: Symbols.search_rounded,
                         selectedIcon: Symbols.manage_search_rounded,
                         selected: _index == 1,
-                        onTap: () => setState(() => _index = 1),
+                        onTap: () => _selectTab(1),
                       ),
                       _BottomNavigationItem(
                         label: 'Watchlist',
                         icon: Symbols.bookmark_border_rounded,
                         selectedIcon: Symbols.bookmark_rounded,
                         selected: _index == 2,
-                        onTap: () => setState(() => _index = 2),
+                        onTap: () => _selectTab(2),
                       ),
                     ],
                   ),
@@ -189,6 +225,11 @@ class _BottomNavigationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedBackground = Color.alphaBlend(
+      scheme.primary.withValues(alpha: isDark ? .14 : .10),
+      scheme.surfaceContainerHighest,
+    );
     return Expanded(
       child: Semantics(
         selected: selected,
@@ -196,16 +237,19 @@ class _BottomNavigationItem extends StatelessWidget {
         label: label,
         child: AnimatedContainer(
           key: Key('bottom-navigation-$label'),
-          duration: const Duration(milliseconds: 320),
+          duration: const Duration(milliseconds: 360),
           curve: Curves.easeInOutCubic,
           decoration: BoxDecoration(
-            color: selected ? scheme.primaryContainer : Colors.transparent,
-            borderRadius: BorderRadius.circular(27),
+            color: selected ? selectedBackground : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            border: selected
+                ? Border.all(color: scheme.primary.withValues(alpha: .18))
+                : null,
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(27),
+              borderRadius: BorderRadius.circular(24),
               onTap: onTap,
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5),
@@ -213,7 +257,7 @@ class _BottomNavigationItem extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 260),
+                      duration: const Duration(milliseconds: 320),
                       switchInCurve: Curves.easeOutCubic,
                       switchOutCurve: Curves.easeInCubic,
                       child: Icon(
@@ -221,7 +265,7 @@ class _BottomNavigationItem extends StatelessWidget {
                         key: ValueKey<bool>(selected),
                         size: 22,
                         color: selected
-                            ? scheme.onPrimaryContainer
+                            ? scheme.primary
                             : scheme.onSurfaceVariant,
                       ),
                     ),
@@ -231,10 +275,10 @@ class _BottomNavigationItem extends StatelessWidget {
                       maxLines: 1,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: selected
-                            ? scheme.onPrimaryContainer
+                            ? scheme.primary
                             : scheme.onSurfaceVariant,
                         fontWeight: selected
-                            ? FontWeight.w800
+                            ? FontWeight.w700
                             : FontWeight.w600,
                       ),
                     ),
