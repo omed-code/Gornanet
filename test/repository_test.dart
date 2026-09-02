@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:goran_net/src/core/tmdb_client.dart';
 import 'package:goran_net/src/models/movie.dart';
+import 'package:goran_net/src/models/search_filters.dart';
 import 'package:goran_net/src/repositories/movie_repository.dart';
 import 'package:goran_net/src/repositories/preferences_repositories.dart';
 import 'package:http/http.dart' as http;
@@ -160,6 +161,37 @@ void main() {
       '/3/discover/tv',
     ]);
     expect(requests.last.url.queryParameters['with_genres'], '16');
+  });
+
+  test('browse filters are sent to the TMDB discover endpoint', () async {
+    late http.Request captured;
+    final client = TmdbClient(
+      accessToken: '0123456789abcdef0123456789abcdef',
+      client: MockClient((request) async {
+        captured = request;
+        return http.Response(
+          '{"page":1,"total_pages":1,"results":['
+          '{"id":8,"title":"Action 2000","release_date":"2000-01-01",'
+          '"vote_average":7.8,"genre_ids":[28]}]}',
+          200,
+        );
+      }),
+    );
+
+    final page = await TmdbMovieRepository(client).browse(
+      page: 1,
+      filters: const SearchFilters(
+        releaseYear: 2000,
+        minimumRating: 7,
+        genreIds: <int>{28},
+      ),
+    );
+
+    expect(captured.url.path, '/3/discover/movie');
+    expect(captured.url.queryParameters['primary_release_year'], '2000');
+    expect(captured.url.queryParameters['vote_average.gte'], '7.0');
+    expect(captured.url.queryParameters['with_genres'], '28');
+    expect(page.movies.single.title, 'Action 2000');
   });
 
   test('genre browsing sends the selected TMDB genre id', () async {

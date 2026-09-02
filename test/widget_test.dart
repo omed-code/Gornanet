@@ -7,6 +7,7 @@ import 'package:goran_net/src/app.dart';
 import 'package:goran_net/src/core/tmdb_client.dart';
 import 'package:goran_net/src/models/movie.dart';
 import 'package:goran_net/src/models/movie_page.dart';
+import 'package:goran_net/src/models/search_filters.dart';
 import 'package:goran_net/src/repositories/movie_repository.dart';
 import 'package:goran_net/src/repositories/preferences_repositories.dart';
 import 'package:goran_net/src/state/app_providers.dart';
@@ -34,6 +35,7 @@ class FakeMovieRepository implements MovieRepository {
   final bool paginated;
   final trendingPages = <int>[];
   final browseCategories = <SearchCategory>[];
+  final browseFilters = <SearchFilters>[];
   final browsedGenres = <BrowseGenre>[];
   final searchQueries = <String>[];
   final searchCategories = <SearchCategory>[];
@@ -42,8 +44,10 @@ class FakeMovieRepository implements MovieRepository {
   Future<MoviePage> browse({
     required int page,
     SearchCategory category = SearchCategory.movies,
+    SearchFilters filters = const SearchFilters(),
   }) async {
     browseCategories.add(category);
+    browseFilters.add(filters);
     final label = switch (category) {
       SearchCategory.movies => 'Popular movie',
       SearchCategory.series => 'Popular series',
@@ -110,6 +114,7 @@ class FakeMovieRepository implements MovieRepository {
     required String query,
     required int page,
     SearchCategory category = SearchCategory.movies,
+    SearchFilters filters = const SearchFilters(),
   }) async {
     searchQueries.add(query);
     searchCategories.add(category);
@@ -566,5 +571,40 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
 
     expect(carousel.controller?.offset, greaterThan(0));
+  });
+
+  testWidgets('search filter button opens all filter controls', (tester) async {
+    await pumpMovieApp(tester);
+    await tester.tap(find.byIcon(Icons.search_rounded).first);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('search-filter-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Released year'), findsOneWidget);
+    expect(find.textContaining('Rating ·'), findsOneWidget);
+    expect(find.text('Genres'), findsOneWidget);
+    expect(find.text('Quality'), findsOneWidget);
+    expect(find.text('Age rating'), findsOneWidget);
+    expect(find.byKey(const Key('apply-search-filters')), findsOneWidget);
+  });
+
+  testWidgets('applying filters reloads browse results with those filters', (
+    tester,
+  ) async {
+    final repository = FakeMovieRepository();
+    await pumpMovieApp(tester, movies: repository);
+    await tester.tap(find.byKey(const Key('app-bar-search')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('search-filter-button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('search-genre-28')));
+    await tester.ensureVisible(find.byKey(const Key('apply-search-filters')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('apply-search-filters')));
+    await tester.pumpAndSettle();
+
+    expect(repository.browseFilters.last.genreIds, contains(28));
   });
 }

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/tmdb_client.dart';
 import '../models/movie.dart';
 import '../models/movie_page.dart';
+import '../models/search_filters.dart';
 import '../repositories/movie_repository.dart';
 import '../repositories/preferences_repositories.dart';
 
@@ -299,20 +300,30 @@ class SearchState {
   const SearchState({
     this.query = '',
     this.category = SearchCategory.movies,
+    this.filters = const SearchFilters(),
     this.results,
   });
 
   final String query;
   final SearchCategory category;
+  final SearchFilters filters;
   final AsyncValue<PagedMovies>? results;
+
+  AsyncValue<PagedMovies>? get visibleResults => results?.whenData(
+    (data) => data.copyWith(
+      movies: data.movies.where(filters.matches).toList(growable: false),
+    ),
+  );
 
   SearchState copyWith({
     String? query,
     SearchCategory? category,
+    SearchFilters? filters,
     AsyncValue<PagedMovies>? results,
   }) => SearchState(
     query: query ?? this.query,
     category: category ?? this.category,
+    filters: filters ?? this.filters,
     results: results ?? this.results,
   );
 }
@@ -327,6 +338,15 @@ class SearchNotifier extends Notifier<SearchState> {
   @override
   SearchState build() => const SearchState();
 
+  Future<void> applyFilters(SearchFilters filters) async {
+    state = state.copyWith(filters: filters);
+    if (state.query.isEmpty) {
+      await browse();
+    } else {
+      await search(state.query);
+    }
+  }
+
   Future<Movie> randomSuggestion() async {
     await ref.read(tmdbCredentialProvider.notifier).ready;
     return ref.read(movieRepositoryProvider).randomSuggestion();
@@ -334,16 +354,24 @@ class SearchNotifier extends Notifier<SearchState> {
 
   Future<void> browse() async {
     final category = state.category;
+    final filters = state.filters;
     final requestId = ++_requestId;
-    state = SearchState(category: category, results: const AsyncLoading());
+    state = SearchState(
+      category: category,
+      filters: filters,
+      results: const AsyncLoading(),
+    );
     try {
       await ref.read(tmdbCredentialProvider.notifier).ready;
-      final page = await ref
-          .read(movieRepositoryProvider)
-          .browse(page: 1, category: category);
+      final repository = ref.read(movieRepositoryProvider);
+      final page = await _firstMatchingPage(
+        (page) =>
+            repository.browse(page: page, category: category, filters: filters),
+      );
       if (requestId == _requestId) {
         state = SearchState(
           category: category,
+          filters: filters,
           results: AsyncData(PagedMovies.fromPage(page)),
         );
       }
@@ -351,6 +379,7 @@ class SearchNotifier extends Notifier<SearchState> {
       if (requestId == _requestId) {
         state = SearchState(
           category: category,
+          filters: filters,
           results: AsyncError(error, stackTrace),
         );
       }
@@ -360,6 +389,7 @@ class SearchNotifier extends Notifier<SearchState> {
   Future<void> search(String rawQuery) async {
     final query = rawQuery.trim();
     final category = state.category;
+    final filters = state.filters;
     final requestId = ++_requestId;
     if (query.isEmpty) {
       await browse();
@@ -369,17 +399,25 @@ class SearchNotifier extends Notifier<SearchState> {
     state = SearchState(
       query: query,
       category: category,
+      filters: filters,
       results: const AsyncLoading(),
     );
     try {
       await ref.read(tmdbCredentialProvider.notifier).ready;
-      final page = await ref
-          .read(movieRepositoryProvider)
-          .search(query: query, page: 1, category: category);
+      final repository = ref.read(movieRepositoryProvider);
+      final page = await _firstMatchingPage(
+        (page) => repository.search(
+          query: query,
+          page: page,
+          category: category,
+          filters: filters,
+        ),
+      );
       if (requestId == _requestId) {
         state = SearchState(
           query: query,
           category: category,
+          filters: filters,
           results: AsyncData(PagedMovies.fromPage(page)),
         );
       }
@@ -388,6 +426,7 @@ class SearchNotifier extends Notifier<SearchState> {
         state = SearchState(
           query: query,
           category: category,
+          filters: filters,
           results: AsyncError(error, stackTrace),
         );
       }
@@ -397,7 +436,11 @@ class SearchNotifier extends Notifier<SearchState> {
   Future<void> selectCategory(SearchCategory category) async {
     if (category == state.category) return;
     final query = state.query;
-    state = SearchState(query: query, category: category);
+    state = SearchState(
+      query: query,
+      category: category,
+      filters: state.filters,
+    );
     if (query.isNotEmpty) {
       await search(query);
     } else {
@@ -406,6 +449,18 @@ class SearchNotifier extends Notifier<SearchState> {
   }
 
   Future<void> retry() => state.query.isEmpty ? browse() : search(state.query);
+
+  Future<MoviePage> _firstMatchingPage(
+    Future<MoviePage> Function(int page) load,
+  ) async {
+    var page = await load(1);
+    while (page.movies.isEmpty &&
+        page.page < page.totalPages &&
+        page.page < 5) {
+      page = await load(page.page + 1);
+    }
+    return page;
+  }
 
   Future<void> loadMore() async {
     final query = state.query;
@@ -423,11 +478,16 @@ class SearchNotifier extends Notifier<SearchState> {
     try {
       final repository = ref.read(movieRepositoryProvider);
       final page = query.isEmpty
-          ? await repository.browse(page: current.page + 1, category: category)
+          ? await repository.browse(
+              page: current.page + 1,
+              category: category,
+              filters: state.filters,
+            )
           : await repository.search(
               query: query,
               page: current.page + 1,
               category: category,
+              filters: state.filters,
             );
       if (requestId == _requestId) {
         state = state.copyWith(results: AsyncData(current.append(page)));

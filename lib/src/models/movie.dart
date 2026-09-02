@@ -12,6 +12,8 @@ class Movie {
     this.mediaType = MediaType.movie,
     this.runtime,
     this.genres = const <String>[],
+    this.genreIds = const <int>[],
+    this.adult = false,
   });
 
   final int id;
@@ -24,6 +26,8 @@ class Movie {
   final MediaType mediaType;
   final int? runtime;
   final List<String> genres;
+  final List<int> genreIds;
+  final bool adult;
 
   String get releaseYear {
     final date = releaseDate;
@@ -44,6 +48,7 @@ class Movie {
     MediaType defaultMediaType = MediaType.movie,
   }) {
     final rawGenres = json['genres'];
+    final rawGenreIds = json['genre_ids'];
     final rawRuntime = json['episode_run_time'];
     final mediaType = switch (_string(json['media_type'])) {
       'tv' => MediaType.tv,
@@ -77,6 +82,20 @@ class Movie {
                 .whereType<String>()
                 .toList(growable: false)
           : const <String>[],
+      genreIds: rawGenreIds is List
+          ? rawGenreIds
+                .whereType<num>()
+                .map((id) => id.toInt())
+                .toList(growable: false)
+          : rawGenres is List
+          ? rawGenres
+                .whereType<Map>()
+                .map((genre) => genre['id'])
+                .whereType<num>()
+                .map((id) => id.toInt())
+                .toList(growable: false)
+          : const <int>[],
+      adult: json['adult'] == true,
     );
   }
 
@@ -94,6 +113,8 @@ class Movie {
     'media_type': mediaType.name,
     'runtime': runtime,
     'genres': genres.map((name) => <String, String>{'name': name}).toList(),
+    'genre_ids': genreIds,
+    'adult': adult,
   };
 
   Movie mergeDetails(Movie details) => Movie(
@@ -107,6 +128,8 @@ class Movie {
     mediaType: mediaType,
     runtime: details.runtime,
     genres: details.genres,
+    genreIds: details.genreIds.isEmpty ? genreIds : details.genreIds,
+    adult: details.adult,
   );
 
   static String? _string(Object? value) {

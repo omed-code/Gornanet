@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:goran_net/src/models/movie.dart';
 import 'package:goran_net/src/models/movie_page.dart';
+import 'package:goran_net/src/models/search_filters.dart';
 import 'package:goran_net/src/state/app_providers.dart';
 
 void main() {
@@ -115,5 +116,43 @@ void main() {
     expect(merged.movies, hasLength(2));
     expect(merged.movies.first.title, 'Updated');
     expect(merged.canLoadMore, isFalse);
+  });
+
+  test('search filters match year, rating, genre, artwork, and age', () {
+    const title = Movie(
+      id: 9,
+      title: 'Filtered title',
+      overview: '',
+      posterPath: '/poster.jpg',
+      backdropPath: '/backdrop.jpg',
+      releaseDate: '2025-04-10',
+      voteAverage: 8.2,
+      genreIds: <int>[28, 12],
+    );
+    const filters = SearchFilters(
+      releaseYear: 2025,
+      minimumRating: 8,
+      genreIds: <int>{28},
+      quality: SearchArtworkQuality.backdrop,
+      ageRating: SearchAgeRating.allAges,
+    );
+
+    expect(filters.activeCount, 5);
+    expect(filters.matches(title), isTrue);
+    expect(
+      filters.matches(
+        const Movie(
+          id: 10,
+          title: 'Wrong year',
+          overview: '',
+          posterPath: '/poster.jpg',
+          backdropPath: '/backdrop.jpg',
+          releaseDate: '2024-04-10',
+          voteAverage: 8.2,
+          genreIds: <int>[28],
+        ),
+      ),
+      isFalse,
+    );
   });
 }

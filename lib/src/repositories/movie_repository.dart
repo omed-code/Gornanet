@@ -3,6 +3,7 @@ import 'dart:math';
 import '../core/tmdb_client.dart';
 import '../models/movie.dart';
 import '../models/movie_page.dart';
+import '../models/search_filters.dart';
 
 enum SearchCategory { movies, series, anime }
 
@@ -25,6 +26,7 @@ abstract class MovieRepository {
   Future<MoviePage> browse({
     required int page,
     SearchCategory category = SearchCategory.movies,
+    SearchFilters filters = const SearchFilters(),
   });
   Future<MoviePage> browseGenre({
     required BrowseGenre genre,
@@ -34,6 +36,7 @@ abstract class MovieRepository {
     required String query,
     required int page,
     SearchCategory category = SearchCategory.movies,
+    SearchFilters filters = const SearchFilters(),
   });
   Future<Movie> randomSuggestion();
   Future<Movie> details(int movieId, {MediaType mediaType = MediaType.movie});
@@ -59,28 +62,48 @@ class TmdbMovieRepository implements MovieRepository {
   Future<MoviePage> browse({
     required int page,
     SearchCategory category = SearchCategory.movies,
+    SearchFilters filters = const SearchFilters(),
   }) async {
-    final path = switch (category) {
-      SearchCategory.movies => '/movie/popular',
-      SearchCategory.series => '/tv/popular',
-      SearchCategory.anime => '/discover/tv',
-    };
+    final useDiscover = category == SearchCategory.anime || !filters.isEmpty;
+    final path = useDiscover
+        ? category == SearchCategory.movies
+              ? '/discover/movie'
+              : '/discover/tv'
+        : switch (category) {
+            SearchCategory.movies => '/movie/popular',
+            SearchCategory.series => '/tv/popular',
+            SearchCategory.anime => '/discover/tv',
+          };
     final json = await _client.get(
       path,
       query: <String, String>{
         'page': '$page',
-        'include_adult': 'false',
-        if (category == SearchCategory.anime) ...<String, String>{
-          'with_genres': '16',
+        'include_adult': filters.ageRating == SearchAgeRating.adultsOnly
+            ? 'true'
+            : 'false',
+        if (useDiscover) ...<String, String>{
           'sort_by': 'popularity.desc',
+          if (filters.releaseYear != null)
+            category == SearchCategory.movies
+                    ? 'primary_release_year'
+                    : 'first_air_date_year':
+                '${filters.releaseYear}',
+          if (filters.minimumRating > 0)
+            'vote_average.gte': '${filters.minimumRating}',
+          if (filters.minimumRating > 0) 'vote_count.gte': '20',
+          if (category == SearchCategory.anime || filters.genreIds.isNotEmpty)
+            'with_genres': _discoveryGenres(category, filters.genreIds),
         },
       },
     );
-    return MoviePage.fromJson(
-      json,
-      defaultMediaType: category == SearchCategory.movies
-          ? MediaType.movie
-          : MediaType.tv,
+    return _applyFilters(
+      MoviePage.fromJson(
+        json,
+        defaultMediaType: category == SearchCategory.movies
+            ? MediaType.movie
+            : MediaType.tv,
+      ),
+      filters,
     );
   }
 
@@ -106,6 +129,7 @@ class TmdbMovieRepository implements MovieRepository {
     required String query,
     required int page,
     SearchCategory category = SearchCategory.movies,
+    SearchFilters filters = const SearchFilters(),
   }) async {
     final path = switch (category) {
       SearchCategory.movies => '/search/movie',
@@ -118,16 +142,43 @@ class TmdbMovieRepository implements MovieRepository {
         'query': query,
         'page': '$page',
         'include_adult': 'false',
+        if (filters.releaseYear != null)
+          category == SearchCategory.movies
+                  ? 'primary_release_year'
+                  : 'first_air_date_year':
+              '${filters.releaseYear}',
       },
     );
-    return MoviePage.fromJson(
-      json,
-      defaultMediaType: category == SearchCategory.series
-          ? MediaType.tv
-          : MediaType.movie,
-      animeOnly: category == SearchCategory.anime,
+    return _applyFilters(
+      MoviePage.fromJson(
+        json,
+        defaultMediaType: category == SearchCategory.series
+            ? MediaType.tv
+            : MediaType.movie,
+        animeOnly: category == SearchCategory.anime,
+      ),
+      filters,
     );
   }
+
+  String _discoveryGenres(SearchCategory category, Set<int> selected) {
+    final mapped = selected.map(
+      (id) => switch ((category, id)) {
+        (SearchCategory.series || SearchCategory.anime, 28 || 12) => 10759,
+        (SearchCategory.series || SearchCategory.anime, 14 || 878) => 10765,
+        _ => id,
+      },
+    );
+    final chosen = mapped.toSet().join('|');
+    if (category != SearchCategory.anime) return chosen;
+    return chosen.isEmpty ? '16' : '16,$chosen';
+  }
+
+  MoviePage _applyFilters(MoviePage page, SearchFilters filters) => MoviePage(
+    movies: page.movies.where(filters.matches).toList(growable: false),
+    page: page.page,
+    totalPages: page.totalPages,
+  );
 
   @override
   Future<Movie> randomSuggestion() async {

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/tmdb_client.dart';
 import '../repositories/movie_repository.dart';
+import '../models/search_filters.dart';
 import '../state/app_providers.dart';
 import 'movie_detail_screen.dart';
 import 'widgets/credential_dialog.dart';
@@ -172,6 +173,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
+  Future<void> _showFilters(SearchFilters filters) async {
+    final updated = await showModalBottomSheet<SearchFilters>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => _SearchFilterSheet(initialFilters: filters),
+    );
+    if (updated != null && mounted) {
+      await ref.read(searchProvider.notifier).applyFilters(updated);
+    }
+  }
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -208,9 +222,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ? _defaultHint(search.category)
                       : 'Try “$_animatedHint”',
                   prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _textController.text.isEmpty
-                      ? null
-                      : IconButton(
+                  suffixIconConstraints: const BoxConstraints(minWidth: 52),
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (_textController.text.isNotEmpty)
+                        IconButton(
                           tooltip: 'Clear search',
                           onPressed: () {
                             _debounce?.cancel();
@@ -221,6 +238,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           },
                           icon: const Icon(Icons.close_rounded),
                         ),
+                      IconButton(
+                        key: const Key('search-filter-button'),
+                        tooltip: 'Filter titles',
+                        onPressed: () => _showFilters(search.filters),
+                        icon: Badge(
+                          isLabelVisible: search.filters.activeCount > 0,
+                          label: Text('${search.filters.activeCount}'),
+                          child: const Icon(Icons.tune_rounded),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -246,17 +275,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ButtonSegment(
                   value: SearchCategory.movies,
                   label: Text('Movies'),
-                  icon: Icon(Icons.movie_outlined),
+                  icon: Icon(Icons.theaters_rounded),
                 ),
                 ButtonSegment(
                   value: SearchCategory.series,
                   label: Text('Series'),
-                  icon: Icon(Icons.tv_outlined),
+                  icon: Icon(Icons.subscriptions_rounded),
                 ),
                 ButtonSegment(
                   value: SearchCategory.anime,
                   label: Text('Anime'),
-                  icon: Icon(Icons.animation_outlined),
+                  icon: Icon(Icons.auto_awesome_rounded),
                 ),
               ],
               selected: <SearchCategory>{search.category},
@@ -307,7 +336,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildResults(SearchState search) {
-    final results = search.results;
+    final results = search.visibleResults;
     if (results == null) {
       return StatePanel(
         icon: Icons.manage_search,
@@ -336,12 +365,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       },
       data: (data) {
         if (data.movies.isEmpty) {
+          final hasFilters = search.filters.activeCount > 0;
           return StatePanel(
             icon: Icons.search_off,
             title: 'No matches',
-            message: search.query.isEmpty
+            message: hasFilters
+                ? 'No titles in the loaded results match these filters.'
+                : search.query.isEmpty
                 ? 'No ${_categoryName(search.category, plural: true)} are available right now.'
                 : 'No ${_categoryName(search.category, plural: true)} matched “${search.query}”. Try another title.',
+            actionLabel: hasFilters ? 'Clear filters' : null,
+            onAction: hasFilters
+                ? () {
+                    ref
+                        .read(searchProvider.notifier)
+                        .applyFilters(const SearchFilters());
+                  }
+                : null,
           );
         }
         return MovieListView(
@@ -366,4 +406,339 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     SearchCategory.series => 'Search series and shows',
     SearchCategory.anime => 'Search anime titles',
   };
+}
+
+class _SearchFilterSheet extends StatefulWidget {
+  const _SearchFilterSheet({required this.initialFilters});
+
+  final SearchFilters initialFilters;
+
+  @override
+  State<_SearchFilterSheet> createState() => _SearchFilterSheetState();
+}
+
+class _SearchFilterSheetState extends State<_SearchFilterSheet> {
+  static const _genres = <int, String>{
+    28: 'Action',
+    12: 'Adventure',
+    16: 'Animation',
+    35: 'Comedy',
+    80: 'Crime',
+    99: 'Documentary',
+    18: 'Drama',
+    14: 'Fantasy',
+    27: 'Horror',
+    10749: 'Romance',
+    878: 'Sci-Fi',
+    53: 'Thriller',
+  };
+
+  late int? _releaseYear;
+  late double _minimumRating;
+  late Set<int> _genreIds;
+  late SearchArtworkQuality _quality;
+  late SearchAgeRating _ageRating;
+
+  @override
+  void initState() {
+    super.initState();
+    final filters = widget.initialFilters;
+    _releaseYear = filters.releaseYear;
+    _minimumRating = filters.minimumRating;
+    _genreIds = {...filters.genreIds};
+    _quality = filters.quality;
+    _ageRating = filters.ageRating;
+  }
+
+  SearchFilters get _filters => SearchFilters(
+    releaseYear: _releaseYear,
+    minimumRating: _minimumRating,
+    genreIds: _genreIds,
+    quality: _quality,
+    ageRating: _ageRating,
+  );
+
+  Future<void> _pickReleaseYear() async {
+    final year = await showModalBottomSheet<int>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (_) => _ReleaseYearPicker(initialYear: _releaseYear),
+    );
+    if (year != null && mounted) setState(() => _releaseYear = year);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        0,
+        20,
+        20 + MediaQuery.viewInsetsOf(context).bottom,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    'Filter titles',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+                TextButton(
+                  key: const Key('reset-search-filters'),
+                  onPressed: () => setState(() {
+                    _releaseYear = null;
+                    _minimumRating = 0;
+                    _genreIds = <int>{};
+                    _quality = SearchArtworkQuality.any;
+                    _ageRating = SearchAgeRating.any;
+                  }),
+                  child: const Text('Reset'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Released year',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                key: const Key('release-year-filter'),
+                onPressed: _pickReleaseYear,
+                style: OutlinedButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  minimumSize: const Size.fromHeight(56),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                icon: const Icon(Icons.calendar_month_outlined),
+                label: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        _releaseYear?.toString() ?? 'Any year',
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                    const Icon(Icons.expand_more_rounded),
+                  ],
+                ),
+              ),
+            ),
+            if (_releaseYear != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => setState(() => _releaseYear = null),
+                  child: const Text('Any year'),
+                ),
+              ),
+            const SizedBox(height: 14),
+            Text(
+              _minimumRating == 0
+                  ? 'Rating · Any'
+                  : 'Rating · ${_minimumRating.toStringAsFixed(1)} or higher',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Slider(
+              key: const Key('rating-filter'),
+              value: _minimumRating,
+              min: 0,
+              max: 10,
+              divisions: 20,
+              label: _minimumRating.toStringAsFixed(1),
+              onChanged: (value) => setState(() => _minimumRating = value),
+            ),
+            const SizedBox(height: 8),
+            Text('Genres', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: _genres.entries
+                  .map((genre) {
+                    final selected = _genreIds.contains(genre.key);
+                    return FilterChip(
+                      key: Key('search-genre-${genre.key}'),
+                      label: Text(genre.value),
+                      selected: selected,
+                      onSelected: (value) => setState(() {
+                        if (value) {
+                          _genreIds.add(genre.key);
+                        } else {
+                          _genreIds.remove(genre.key);
+                        }
+                      }),
+                    );
+                  })
+                  .toList(growable: false),
+            ),
+            const SizedBox(height: 20),
+            Text('Quality', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SegmentedButton<SearchArtworkQuality>(
+              key: const Key('quality-filter'),
+              segments: const <ButtonSegment<SearchArtworkQuality>>[
+                ButtonSegment(
+                  value: SearchArtworkQuality.any,
+                  label: Text('Any'),
+                ),
+                ButtonSegment(
+                  value: SearchArtworkQuality.poster,
+                  label: Text('Poster'),
+                ),
+                ButtonSegment(
+                  value: SearchArtworkQuality.backdrop,
+                  label: Text('Backdrop'),
+                ),
+              ],
+              selected: <SearchArtworkQuality>{_quality},
+              showSelectedIcon: false,
+              onSelectionChanged: (value) =>
+                  setState(() => _quality = value.first),
+            ),
+            const SizedBox(height: 20),
+            Text('Age rating', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SegmentedButton<SearchAgeRating>(
+              key: const Key('age-rating-filter'),
+              segments: const <ButtonSegment<SearchAgeRating>>[
+                ButtonSegment(value: SearchAgeRating.any, label: Text('Any')),
+                ButtonSegment(
+                  value: SearchAgeRating.allAges,
+                  label: Text('All ages'),
+                ),
+                ButtonSegment(
+                  value: SearchAgeRating.adultsOnly,
+                  label: Text('18+'),
+                ),
+              ],
+              selected: <SearchAgeRating>{_ageRating},
+              showSelectedIcon: false,
+              onSelectionChanged: (value) =>
+                  setState(() => _ageRating = value.first),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                key: const Key('apply-search-filters'),
+                onPressed: () => Navigator.pop(context, _filters),
+                icon: const Icon(Icons.tune_rounded),
+                label: Text(
+                  _filters.activeCount == 0
+                      ? 'Show all titles'
+                      : 'Apply ${_filters.activeCount} filters',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReleaseYearPicker extends StatefulWidget {
+  const _ReleaseYearPicker({required this.initialYear});
+
+  final int? initialYear;
+
+  @override
+  State<_ReleaseYearPicker> createState() => _ReleaseYearPickerState();
+}
+
+class _ReleaseYearPickerState extends State<_ReleaseYearPicker> {
+  static const _oldestYear = 1950;
+  late final int _currentYear;
+  late final FixedExtentScrollController _controller;
+  late int _selectedYear;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentYear = DateTime.now().year;
+    _selectedYear = (widget.initialYear ?? _currentYear).clamp(
+      _oldestYear,
+      _currentYear,
+    );
+    _controller = FixedExtentScrollController(
+      initialItem: _currentYear - _selectedYear,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final yearCount = _currentYear - _oldestYear + 1;
+    return SizedBox(
+      height: 340,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          children: <Widget>[
+            Text(
+              'Choose release year',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListWheelScrollView.useDelegate(
+                key: const Key('release-year-wheel'),
+                controller: _controller,
+                itemExtent: 48,
+                diameterRatio: 1.35,
+                physics: const FixedExtentScrollPhysics(),
+                onSelectedItemChanged: (index) =>
+                    _selectedYear = _currentYear - index,
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: yearCount,
+                  builder: (context, index) {
+                    final year = _currentYear - index;
+                    return Center(
+                      child: Text(
+                        '$year',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    key: const Key('confirm-release-year'),
+                    onPressed: () => Navigator.pop(context, _selectedYear),
+                    child: const Text('Select year'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

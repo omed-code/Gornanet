@@ -62,21 +62,21 @@ class TrendingScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Movies',
-                icon: Icons.movie_outlined,
+                icon: Icons.theaters_rounded,
                 movies: data.movies,
                 autoScrollInterval: const Duration(seconds: 6),
               ),
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Series',
-                icon: Icons.tv_outlined,
+                icon: Icons.subscriptions_rounded,
                 movies: data.series,
                 autoScrollInterval: const Duration(seconds: 7),
               ),
               const SizedBox(height: 24),
               _MediaSection(
                 title: 'Anime',
-                icon: Icons.animation_outlined,
+                icon: Icons.auto_awesome_rounded,
                 movies: data.anime,
                 autoScrollInterval: const Duration(seconds: 8),
               ),
@@ -106,7 +106,7 @@ class _GenreSection extends StatelessWidget {
         Row(
           children: <Widget>[
             Icon(
-              Icons.theater_comedy_outlined,
+              Icons.widgets_rounded,
               color: Theme.of(context).colorScheme.primary,
             ),
             const SizedBox(width: 8),
