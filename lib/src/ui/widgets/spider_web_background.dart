@@ -20,7 +20,12 @@ class SpiderWebBackground extends StatelessWidget {
               child: CustomPaint(
                 painter: _SpiderWebPainter(
                   color: theme.colorScheme.secondary,
-                  opacity: theme.brightness == Brightness.dark ? .1 : .055,
+                  accentOpacity: theme.brightness == Brightness.dark
+                      ? .1
+                      : .055,
+                  ambientOpacity: theme.brightness == Brightness.dark
+                      ? .042
+                      : .026,
                 ),
               ),
             ),
@@ -33,25 +38,59 @@ class SpiderWebBackground extends StatelessWidget {
 }
 
 class _SpiderWebPainter extends CustomPainter {
-  const _SpiderWebPainter({required this.color, required this.opacity});
+  const _SpiderWebPainter({
+    required this.color,
+    required this.accentOpacity,
+    required this.ambientOpacity,
+  });
 
   final Color color;
-  final double opacity;
+  final double accentOpacity;
+  final double ambientOpacity;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final radius = math.min(size.width * .76, 320.0);
-    final center = Offset(size.width + 8, -8);
-    const spokes = 9;
-    const rings = 7;
+    final topRight = Offset(size.width + 8, -8);
+    _drawWeb(
+      canvas,
+      center: topRight,
+      radius: math.max(size.height * .94, size.width * 1.25),
+      startAngle: math.pi / 2,
+      sweepAngle: math.pi / 2,
+      opacity: ambientOpacity,
+      spokes: 12,
+      rings: 14,
+    );
 
+    _drawWeb(
+      canvas,
+      center: topRight,
+      radius: math.min(size.width * .76, 320),
+      startAngle: math.pi / 2,
+      sweepAngle: math.pi / 2,
+      opacity: accentOpacity,
+      spokes: 9,
+      rings: 7,
+    );
+  }
+
+  void _drawWeb(
+    Canvas canvas, {
+    required Offset center,
+    required double radius,
+    required double startAngle,
+    required double sweepAngle,
+    required double opacity,
+    required int spokes,
+    required int rings,
+  }) {
     final spokePaint = Paint()
       ..color = color.withValues(alpha: opacity * .72)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
     for (var index = 0; index < spokes; index++) {
-      final angle = math.pi / 2 + (math.pi / 2) * index / (spokes - 1);
+      final angle = startAngle + sweepAngle * index / (spokes - 1);
       canvas.drawLine(
         center,
         center + Offset(math.cos(angle), math.sin(angle)) * radius,
@@ -67,8 +106,8 @@ class _SpiderWebPainter extends CustomPainter {
         ..strokeWidth = 1;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius * progress),
-        math.pi / 2,
-        math.pi / 2,
+        startAngle,
+        sweepAngle,
         false,
         ringPaint,
       );
@@ -77,5 +116,7 @@ class _SpiderWebPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SpiderWebPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.opacity != opacity;
+      oldDelegate.color != color ||
+      oldDelegate.accentOpacity != accentOpacity ||
+      oldDelegate.ambientOpacity != ambientOpacity;
 }
