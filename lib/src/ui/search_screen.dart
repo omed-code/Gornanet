@@ -203,71 +203,117 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Column(
       children: <Widget>[
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              TextField(
-                key: const Key('movie-search-field'),
-                controller: _textController,
-                focusNode: _searchFocusNode,
-                onChanged: _onChanged,
-                textInputAction: TextInputAction.search,
-                onSubmitted: (value) {
-                  _debounce?.cancel();
-                  ref.read(searchProvider.notifier).search(value);
-                },
-                decoration: InputDecoration(
-                  hintText: _animatedHint.isEmpty
-                      ? _defaultHint(search.category)
-                      : 'Try “$_animatedHint”',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIconConstraints: const BoxConstraints(minWidth: 52),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      if (_textController.text.isNotEmpty)
-                        IconButton(
-                          tooltip: 'Clear search',
-                          onPressed: () {
-                            _debounce?.cancel();
-                            _textController.clear();
-                            _startHintAnimation(search.category);
-                            ref.read(searchProvider.notifier).search('');
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      IconButton(
-                        key: const Key('search-filter-button'),
-                        tooltip: 'Filter titles',
-                        onPressed: () => _showFilters(search.filters),
-                        icon: Badge(
-                          isLabelVisible: search.filters.activeCount > 0,
-                          label: Text('${search.filters.activeCount}'),
-                          child: const Icon(Icons.tune_rounded),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  'Spider Movie · Movies, series, and anime in one place',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          child: _buildDiscoveryPanel(context, search),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: SizedBox(
+        Expanded(child: _buildResults(search)),
+      ],
+    );
+  }
+
+  Widget _buildDiscoveryPanel(BuildContext context, SearchState search) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: scheme.outlineVariant),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: scheme.shadow.withValues(alpha: .055),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.explore_rounded, size: 18, color: scheme.primary),
+                const SizedBox(width: 7),
+                Text(
+                  'DISCOVER',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: scheme.primary,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const Spacer(),
+                if (search.filters.activeCount > 0)
+                  Text(
+                    '${search.filters.activeCount} active',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: scheme.secondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          TextField(
+            key: const Key('movie-search-field'),
+            controller: _textController,
+            focusNode: _searchFocusNode,
+            onChanged: _onChanged,
+            textInputAction: TextInputAction.search,
+            onSubmitted: (value) {
+              _debounce?.cancel();
+              ref.read(searchProvider.notifier).search(value);
+            },
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: scheme.surfaceContainer,
+              hintText: _animatedHint.isEmpty
+                  ? _defaultHint(search.category)
+                  : 'Try “$_animatedHint”',
+              prefixIcon: Icon(Icons.search_rounded, color: scheme.secondary),
+              suffixIconConstraints: const BoxConstraints(minWidth: 52),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (_textController.text.isNotEmpty)
+                    IconButton(
+                      tooltip: 'Clear search',
+                      onPressed: () {
+                        _debounce?.cancel();
+                        _textController.clear();
+                        _startHintAnimation(search.category);
+                        ref.read(searchProvider.notifier).search('');
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  IconButton.filledTonal(
+                    key: const Key('search-filter-button'),
+                    tooltip: 'Filter titles',
+                    onPressed: () => _showFilters(search.filters),
+                    icon: Badge(
+                      isLabelVisible: search.filters.activeCount > 0,
+                      label: Text('${search.filters.activeCount}'),
+                      child: const Icon(Icons.tune_rounded),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Text(
+              'Search movies, series, and anime from one place',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          SizedBox(
             width: double.infinity,
             child: SegmentedButton<SearchCategory>(
               key: const Key('search-category-selector'),
@@ -299,39 +345,78 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               },
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.tonalIcon(
+          const SizedBox(height: 10),
+          Material(
+            color: scheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
               key: const Key('random-suggestion-button'),
-              onPressed: _loadingRandomSuggestion
-                  ? null
-                  : _showRandomSuggestion,
-              icon: _loadingRandomSuggestion
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(5),
-                      child: Image.asset(
-                        'assets/branding/spider_movie_icon.png',
-                        key: const Key('random-suggestion-logo'),
-                        width: 22,
-                        height: 22,
-                        fit: BoxFit.cover,
+              borderRadius: BorderRadius.circular(16),
+              onTap: _loadingRandomSuggestion ? null : _showRandomSuggestion,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    if (_loadingRandomSuggestion)
+                      const SizedBox.square(
+                        dimension: 34,
+                        child: Padding(
+                          padding: EdgeInsets.all(7),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    else
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.asset(
+                          'assets/branding/spider_movie_icon.png',
+                          key: const Key('random-suggestion-logo'),
+                          width: 34,
+                          height: 34,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            _loadingRandomSuggestion
+                                ? 'Finding your next title…'
+                                : 'Surprise me',
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: scheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          if (!_loadingRandomSuggestion)
+                            Text(
+                              'Get a random recommendation',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: scheme.onSecondaryContainer
+                                        .withValues(alpha: .76),
+                                  ),
+                            ),
+                        ],
                       ),
                     ),
-              label: Text(
-                _loadingRandomSuggestion ? 'Finding a title…' : 'Surprise me',
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: scheme.onSecondaryContainer,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-        Expanded(child: _buildResults(search)),
-      ],
+        ],
+      ),
     );
   }
 
