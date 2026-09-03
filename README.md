@@ -31,6 +31,7 @@ The project satisfies the requested Flutter 3.32+ and Dart 3.8+ language require
 - Debounced movie, series, and anime search
 - Release year, minimum rating, genre, artwork, and audience filters
 - Search pagination with duplicate-result prevention
+- `ListView.builder` for every dynamic movie collection
 - Pull-to-refresh on network result lists
 - Movie and television detail endpoints
 - Random title recommendations
@@ -107,7 +108,7 @@ Widgets retain only presentation-specific resources:
 
 - `SearchScreen` owns its `TextEditingController`, `ScrollController`, `FocusNode`, debounce timer, and animated-hint timer.
 - `MovieDetailScreen` owns the scroll controller used by its collapsing title behavior.
-- Trending carousels own their page controllers and auto-advance timers.
+- Trending carousels own their scroll controllers and auto-advance timers.
 - The home shell owns the controller for the bottom-navigation transition.
 - The credential dialog and release-year picker own their input controllers.
 

@@ -243,12 +243,27 @@ void main() {
     expect(find.text('Arrival'), findsOneWidget);
     expect(find.byType(SafeArea), findsWidgets);
     expect(find.byKey(const Key('home-sections-list')), findsOneWidget);
-    final moviesCarousel = tester.widget<PageView>(
+    final moviesCarousel = tester.widget<ListView>(
       find.byKey(const Key('movies-horizontal-list')),
     );
     expect(moviesCarousel.scrollDirection, Axis.horizontal);
+    expect(moviesCarousel.childrenDelegate, isA<SliverChildBuilderDelegate>());
     expect(find.text('Movies'), findsOneWidget);
     expect(find.byKey(const Key('modern-bottom-navigation')), findsOneWidget);
+  });
+
+  testWidgets('empty watchlist recommendations use a builder list', (
+    tester,
+  ) async {
+    await pumpMovieApp(tester);
+
+    await tester.tap(find.text('Watchlist'));
+    await tester.pumpAndSettle();
+
+    final recommendations = tester.widget<ListView>(
+      find.byKey(const Key('empty-watchlist-recommendations')),
+    );
+    expect(recommendations.childrenDelegate, isA<SliverChildBuilderDelegate>());
   });
 
   testWidgets('app bar search button opens the search tab', (tester) async {
@@ -547,17 +562,18 @@ void main() {
 
     expect(repository.browsedGenres, contains(BrowseGenre.comedy));
     expect(find.text('Comedy pick'), findsOneWidget);
-    final carousel = tester.widget<PageView>(
+    final carousel = tester.widget<ListView>(
       find.byKey(const Key('genre-picks-horizontal-list')),
     );
     expect(carousel.scrollDirection, Axis.horizontal);
+    expect(carousel.childrenDelegate, isA<SliverChildBuilderDelegate>());
   });
 
   testWidgets('movie carousel advances on its staggered six-second timer', (
     tester,
   ) async {
     await pumpMovieApp(tester, movies: FakeMovieRepository(paginated: true));
-    final carousel = tester.widget<PageView>(
+    final carousel = tester.widget<ListView>(
       find.byKey(const Key('movies-horizontal-list')),
     );
     expect(carousel.controller?.offset, 0);
@@ -578,6 +594,10 @@ void main() {
 
     expect(find.byKey(const Key('all-titles-list')), findsOneWidget);
     expect(find.text('Action titles'), findsOneWidget);
+    final list = tester.widget<ListView>(
+      find.byKey(const Key('all-titles-list')),
+    );
+    expect(list.childrenDelegate, isA<SliverChildBuilderDelegate>());
   });
 
   testWidgets('search filter button opens all filter controls', (tester) async {

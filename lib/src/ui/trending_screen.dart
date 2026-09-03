@@ -345,14 +345,14 @@ class _AutoScrollingMovieCarousel extends StatefulWidget {
 class _AutoScrollingMovieCarouselState
     extends State<_AutoScrollingMovieCarousel> {
   static const _spacing = 12.0;
-  late PageController _controller;
+  late ScrollController _controller;
   Timer? _timer;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController();
+    _controller = ScrollController();
     _startTimer();
   }
 
@@ -362,7 +362,7 @@ class _AutoScrollingMovieCarouselState
     if (oldWidget.movies != widget.movies) {
       _currentIndex = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _controller.hasClients) _controller.jumpToPage(0);
+        if (mounted && _controller.hasClients) _controller.jumpTo(0);
       });
     }
     if (oldWidget.movies != widget.movies ||
@@ -379,10 +379,10 @@ class _AutoScrollingMovieCarouselState
       if (!mounted || !_controller.hasClients) return;
       _currentIndex = (_currentIndex + 1) % widget.movies.length;
       if (_currentIndex == 0) {
-        _controller.jumpToPage(0);
+        _controller.jumpTo(0);
       } else {
-        _controller.animateToPage(
-          _currentIndex,
+        _controller.animateTo(
+          _currentIndex * _controller.position.viewportDimension,
           duration: const Duration(milliseconds: 520),
           curve: Curves.easeOutCubic,
         );
@@ -401,18 +401,33 @@ class _AutoScrollingMovieCarouselState
   Widget build(BuildContext context) {
     return SizedBox(
       height: 156,
-      child: PageView.builder(
-        key: widget.listKey,
-        controller: _controller,
-        scrollDirection: Axis.horizontal,
-        padEnds: false,
-        physics: const PageScrollPhysics(parent: BouncingScrollPhysics()),
-        onPageChanged: (index) => _currentIndex = index,
-        itemCount: widget.movies.length,
-        itemBuilder: (context, index) => Padding(
-          padding: const EdgeInsets.only(right: _spacing),
-          child: MovieCard(movie: widget.movies[index]),
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) =>
+            NotificationListener<ScrollEndNotification>(
+              onNotification: (notification) {
+                final viewport = notification.metrics.viewportDimension;
+                if (viewport > 0) {
+                  _currentIndex = (notification.metrics.pixels / viewport)
+                      .round()
+                      .clamp(0, widget.movies.length - 1);
+                }
+                return false;
+              },
+              child: ListView.builder(
+                key: widget.listKey,
+                controller: _controller,
+                scrollDirection: Axis.horizontal,
+                itemExtent: constraints.maxWidth,
+                physics: const PageScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                itemCount: widget.movies.length,
+                itemBuilder: (context, index) => Padding(
+                  padding: const EdgeInsets.only(right: _spacing),
+                  child: MovieCard(movie: widget.movies[index]),
+                ),
+              ),
+            ),
       ),
     );
   }
