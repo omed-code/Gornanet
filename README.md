@@ -1,4 +1,8 @@
-# Spider Movie
+<p align="center">
+  <img src="assets/branding/spider_movie_icon.png" width="112" alt="Spider Movie app icon">
+</p>
+
+<h1 align="center">Spider Movie</h1>
 
 Spider Movie is a Flutter application built for the Sevennet mobile-development challenge. It uses the TMDB API to present trending movies, browse movies, series, and anime, search for titles, open detailed title information, and maintain an offline watchlist.
 
