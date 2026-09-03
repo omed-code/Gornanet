@@ -8,6 +8,16 @@ The application has three primary destinations:
 - **Search** — debounced search, category browsing, filters, pagination, and random suggestions
 - **Watchlist** — locally saved titles that remain available without a network connection
 
+## Screenshots
+
+| Trending | Search |
+|:---:|:---:|
+| <img src="docs/screenshots/trending-dark.png" width="276" alt="Trending screen in dark mode"> | <img src="docs/screenshots/search-dark.png" width="276" alt="Search screen in dark mode"> |
+
+| Watchlist | Search filters |
+|:---:|:---:|
+| <img src="docs/screenshots/watchlist-dark.png" width="276" alt="Offline watchlist in dark mode"> | <img src="docs/screenshots/filters-dark.png" width="276" alt="Search filter controls in dark mode"> |
+
 Movie cards open a detail route with artwork, rating, release year, runtime, genres, overview, and a watchlist action. Each Trending section also provides a **See all** route for its currently loaded titles.
 
 ## Technology
